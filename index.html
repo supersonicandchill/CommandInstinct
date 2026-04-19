@@ -1,417 +1,3297 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
-<title>Away Game — Christian Parent’s Playbook</title>
-<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #f8f9fa; font-family: 'DM Sans', system-ui, sans-serif; color: #1a1a1a; line-height: 1.6; }
-button { cursor: pointer; }
-.progress-bar { height: 10px; background: #e9ecef; border-radius: 9999px; overflow: hidden; }
-.progress-fill { height: 100%; transition: width 0.5s ease; }
-.team-card { background: #fff; border: 1px solid #dee2e6; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-.delete-btn { background: #fee2e2; color: #ef4444; border: none; width: 32px; height: 32px; border-radius: 8px; font-size: 18px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>COMMAND INSTINCT — Fireground Decision Trainer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    /* =========================================================
+       DESIGN TOKENS & RESET
+    ========================================================= */
+    :root {
+      --fire-red:    #C0392B;
+      --fire-orange: #E67E22;
+      --fire-amber:  #F39C12;
+      --ember:       #FF6B35;
+      --smoke-dark:  #0D0D0F;
+      --smoke-900:   #111214;
+      --smoke-800:   #18191D;
+      --smoke-700:   #222429;
+      --smoke-600:   #2C2F36;
+      --smoke-500:   #3A3E47;
+      --ash:         #6C7080;
+      --chalk:       #B0B5C0;
+      --white:       #F0F2F5;
+      --green-go:    #27AE60;
+      --blue-cool:   #2980B9;
+      --gold:        #F1C40F;
+      --danger:      #E74C3C;
+
+      --font-display: 'Oswald', sans-serif;
+      --font-body:    'Source Sans 3', sans-serif;
+      --font-mono:    'Roboto Mono', monospace;
+
+      --radius:   12px;
+      --radius-lg: 20px;
+      --shadow:   0 4px 24px rgba(0,0,0,0.5);
+      --glow-red: 0 0 30px rgba(192,57,43,0.4);
+      --glow-amb: 0 0 30px rgba(243,156,18,0.3);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: var(--smoke-dark);
+      color: var(--white);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* =========================================================
+       FIRE PARTICLE CANVAS (background atmosphere)
+    ========================================================= */
+    #fire-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.18;
+    }
+
+    /* =========================================================
+       LAYOUT SHELL
+    ========================================================= */
+    #app {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding-bottom: 80px;
+    }
+
+    /* =========================================================
+       TOP NAV
+    ========================================================= */
+    #topnav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: linear-gradient(90deg, #1A0A06, #0D0D0F 60%);
+      border-bottom: 2px solid var(--fire-red);
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0 16px;
+      height: 60px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-right: 24px;
+      flex-shrink: 0;
+    }
+    .brand-icon { font-size: 22px; color: var(--fire-orange); }
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--white);
+      line-height: 1;
+    }
+    .brand-sub {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--fire-amber);
+      letter-spacing: 3px;
+      display: block;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 2px;
+      flex: 1;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+
+    .nav-tab {
+      background: none;
+      border: none;
+      color: var(--ash);
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      padding: 0 14px;
+      height: 60px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+    }
+    .nav-tab:hover { color: var(--chalk); }
+    .nav-tab.active {
+      color: var(--fire-amber);
+      border-bottom-color: var(--fire-amber);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .streak-badge {
+      background: rgba(255,107,53,0.15);
+      border: 1px solid var(--ember);
+      color: var(--ember);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-sm {
+      background: var(--fire-red);
+      border: none;
+      color: white;
+      font-family: var(--font-display);
+      font-size: 11px;
+      letter-spacing: 1px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-sm:hover { background: var(--fire-orange); }
+
+    /* =========================================================
+       PAGE SECTIONS
+    ========================================================= */
+    .page { display: none; padding: 24px 16px; animation: fadeIn 0.3s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .page-title {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    .page-sub {
+      color: var(--ash);
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+
+    /* =========================================================
+       CARDS & GRIDS
+    ========================================================= */
+    .card {
+      background: var(--smoke-800);
+      border: 1px solid var(--smoke-600);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+    .card-sm { padding: 16px; border-radius: var(--radius); }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+
+    /* =========================================================
+       DASHBOARD
+    ========================================================= */
+    .mastery-card {
+      background: linear-gradient(135deg, #1a0a06 0%, #180d04 40%, #0d1018 100%);
+      border: 1px solid var(--smoke-600);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .mastery-card::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(192,57,43,0.25) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .mastery-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--ash);
+      margin-bottom: 6px;
+    }
+    .mastery-rank {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--fire-amber);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .mastery-stars { color: var(--fire-amber); font-size: 14px; margin-bottom: 16px; }
+
+    .prog-bar-wrap { background: var(--smoke-700); border-radius: 99px; height: 8px; overflow: hidden; }
+    .prog-bar {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--fire-red), var(--fire-amber));
+      transition: width 1s ease;
+    }
+
+    .stat-pill {
+      background: var(--smoke-700);
+      border-radius: 8px;
+      padding: 12px 16px;
+      text-align: center;
+    }
+    .stat-pill .val {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .stat-pill .lbl {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: var(--ash);
+      margin-top: 2px;
+    }
+
+    /* Quick Drill button */
+    .drill-btn {
+      width: 100%;
+      padding: 28px;
+      background: linear-gradient(135deg, var(--fire-red), var(--fire-orange));
+      border: none;
+      border-radius: var(--radius-lg);
+      color: white;
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      box-shadow: var(--glow-red);
+    }
+    .drill-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(192,57,43,0.6);
+    }
+
+    /* Recent activity */
+    .activity-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--smoke-700);
+    }
+    .activity-row:last-child { border-bottom: none; }
+    .activity-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: var(--smoke-700);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .activity-title { font-size: 13px; font-weight: 600; }
+    .activity-meta { font-size: 11px; color: var(--ash); }
+    .activity-score {
+      margin-left: auto;
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    /* Daily challenge card */
+    .daily-card {
+      background: linear-gradient(135deg, #0a1520, #0d1a28);
+      border: 1px solid #1e3a5f;
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+    .daily-badge {
+      display: inline-block;
+      background: var(--blue-cool);
+      color: white;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 2px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    /* =========================================================
+       SCENARIO CARDS
+    ========================================================= */
+    .scenario-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+
+    .scenario-card {
+      background: var(--smoke-800);
+      border: 1px solid var(--smoke-600);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .scenario-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--fire-orange);
+      box-shadow: 0 12px 40px rgba(230,126,34,0.3);
+    }
+
+    .scenario-thumb {
+      height: 140px;
+      background: var(--smoke-700);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .scenario-thumb-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0.4;
+    }
+    .scenario-thumb-icon { position: relative; z-index: 1; }
+
+    .scenario-diff {
+      position: absolute;
+      top: 10px; right: 10px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 1px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      z-index: 2;
+    }
+    .diff-basic    { background: #1a4a1a; color: #4ade80; border: 1px solid #27ae60; }
+    .diff-standard { background: #4a3a00; color: #facc15; border: 1px solid #f59e0b; }
+    .diff-advanced { background: #4a1a00; color: #f97316; border: 1px solid #ea580c; }
+    .diff-extreme  { background: #3a0000; color: #f87171; border: 1px solid #dc2626; }
+
+    .scenario-body { padding: 16px; }
+    .scenario-cat {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--ash);
+      margin-bottom: 4px;
+    }
+    .scenario-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .scenario-desc { font-size: 12px; color: var(--chalk); line-height: 1.5; }
+
+    .scenario-footer {
+      padding: 10px 16px;
+      background: var(--smoke-700);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--ash);
+    }
+    .scenario-best { color: var(--fire-amber); font-family: var(--font-mono); font-weight: 700; }
+
+    /* Filter pills */
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .filter-pill {
+      background: var(--smoke-700);
+      border: 1px solid var(--smoke-500);
+      color: var(--chalk);
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-pill:hover { border-color: var(--fire-orange); color: var(--fire-orange); }
+    .filter-pill.active { background: var(--fire-red); border-color: var(--fire-red); color: white; }
+
+    /* =========================================================
+       MODAL (Scenario Player)
+    ========================================================= */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 200;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    #modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; padding-top: 20px; }
+
+    #modal-box {
+      background: var(--smoke-800);
+      border: 1px solid var(--smoke-600);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 800px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #modal-header {
+      background: linear-gradient(90deg, var(--fire-red) 0%, #8B0000 100%);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    #modal-scenario-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    #modal-close {
+      background: rgba(0,0,0,0.3);
+      border: none;
+      color: white;
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Step progress bar inside modal */
+    #modal-step-bar { display: flex; gap: 4px; padding: 12px 20px; background: var(--smoke-900); }
+    .step-pip {
+      flex: 1;
+      height: 4px;
+      background: var(--smoke-600);
+      border-radius: 2px;
+      transition: background 0.3s;
+    }
+    .step-pip.done { background: var(--fire-amber); }
+    .step-pip.active { background: var(--fire-orange); }
+
+    /* Timer ring */
+    .timer-ring-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      background: var(--smoke-900);
+      border-bottom: 1px solid var(--smoke-700);
+    }
+    #timer-svg { flex-shrink: 0; }
+    #timer-circle { transition: stroke-dashoffset 1s linear; }
+    .timer-text {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--fire-amber);
+    }
+    .timer-label { font-size: 11px; color: var(--ash); }
+
+    #modal-body { padding: 24px; min-height: 360px; }
+
+    /* Dispatch block */
+    .dispatch-block {
+      background: #0a1215;
+      border-left: 3px solid var(--blue-cool);
+      border-radius: 0 8px 8px 0;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #7dd3fc;
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+    .dispatch-block .callsign { color: var(--fire-amber); font-weight: 700; }
+
+    /* Cue checkboxes */
+    .cue-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .cue-item {
+      background: var(--smoke-700);
+      border: 1px solid var(--smoke-500);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      transition: all 0.2s;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .cue-item:hover { border-color: var(--fire-orange); }
+    .cue-item.selected { background: rgba(192,57,43,0.15); border-color: var(--fire-red); }
+    .cue-item.correct-cue { border-color: var(--green-go); background: rgba(39,174,96,0.1); }
+    .cue-item.missed-cue { border-color: var(--danger); background: rgba(231,76,60,0.1); }
+    .cue-check { width: 20px; height: 20px; border-radius: 4px; border: 2px solid var(--smoke-500); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all 0.2s; }
+    .cue-item.selected .cue-check { background: var(--fire-red); border-color: var(--fire-red); }
+
+    /* Pattern options */
+    .pattern-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .pattern-btn {
+      background: var(--smoke-700);
+      border: 1px solid var(--smoke-500);
+      border-radius: 10px;
+      padding: 16px 18px;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: var(--white);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .pattern-btn:hover { background: var(--smoke-600); border-color: var(--fire-orange); }
+    .pattern-btn.selected { background: rgba(230,126,34,0.15); border-color: var(--fire-orange); }
+    .pattern-letter {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: var(--smoke-500);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* Mental sim textarea */
+    #mental-sim-area {
+      width: 100%;
+      min-height: 140px;
+      background: var(--smoke-700);
+      border: 1px solid var(--smoke-500);
+      border-radius: 10px;
+      padding: 14px;
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 14px;
+      resize: vertical;
+      margin-bottom: 16px;
+    }
+    #mental-sim-area:focus { outline: none; border-color: var(--fire-orange); }
+
+    /* Action selection */
+    .action-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .action-btn {
+      background: var(--smoke-700);
+      border: 1px solid var(--smoke-500);
+      border-radius: 10px;
+      padding: 18px;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: var(--white);
+      transition: all 0.2s;
+      line-height: 1.5;
+    }
+    .action-btn:hover { background: rgba(39,174,96,0.15); border-color: var(--green-go); }
+
+    /* Score reveal */
+    .score-reveal { text-align: center; padding: 20px 0; }
+    .score-number {
+      font-family: var(--font-display);
+      font-size: 96px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .score-grade { font-size: 18px; color: var(--ash); margin-bottom: 16px; }
+
+    .rpd-breakdown {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .rpd-metric {
+      background: var(--smoke-700);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .rpd-metric .mval {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .rpd-metric .mlbl { font-size: 10px; letter-spacing: 1px; color: var(--ash); }
+
+    .mentor-box {
+      background: #0a1215;
+      border-left: 3px solid var(--fire-amber);
+      border-radius: 0 10px 10px 0;
+      padding: 16px;
+      font-size: 14px;
+      color: var(--chalk);
+      line-height: 1.7;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .mentor-box .mentor-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--fire-amber);
+      margin-bottom: 8px;
+    }
+
+    /* Modal action btns */
+    .modal-btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 10px;
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .modal-btn-primary {
+      background: linear-gradient(90deg, var(--fire-red), var(--fire-orange));
+      color: white;
+    }
+    .modal-btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .modal-btn-secondary {
+      background: var(--smoke-700);
+      color: var(--chalk);
+    }
+    .modal-btn-secondary:hover { background: var(--smoke-600); }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 12px; }
+    .btn-row .modal-btn { margin: 0; }
+
+    /* Section heading inside modal */
+    .step-heading {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .step-sub { font-size: 13px; color: var(--ash); margin-bottom: 18px; }
+
+    /* =========================================================
+       HISTORY TAB
+    ========================================================= */
+    .history-row {
+      background: var(--smoke-800);
+      border: 1px solid var(--smoke-600);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+    }
+    .history-row:hover { border-color: var(--smoke-500); }
+
+    .history-score-ring {
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .history-info { flex: 1; min-width: 0; }
+    .history-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-meta { font-size: 11px; color: var(--ash); margin-top: 2px; }
+
+    .history-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mini-badge {
+      background: var(--smoke-700);
+      border-radius: 4px;
+      padding: 3px 7px;
+      font-size: 10px;
+      color: var(--chalk);
+    }
+
+    /* =========================================================
+       EXPERT LIBRARY
+    ========================================================= */
+    .library-card {
+      background: var(--smoke-800);
+      border: 1px solid var(--smoke-600);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .library-header {
+      padding: 16px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: background 0.2s;
+    }
+    .library-header:hover { background: var(--smoke-700); }
+    .library-icon {
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .library-title { font-family: var(--font-display); font-size: 15px; font-weight: 600; flex: 1; }
+    .library-toggle { color: var(--ash); transition: transform 0.2s; }
+    .library-body { display: none; padding: 0 20px 20px; }
+    .library-body.open { display: block; }
+    .library-body p { font-size: 14px; color: var(--chalk); line-height: 1.8; margin-bottom: 10px; }
+    .library-body ul { padding-left: 20px; }
+    .library-body li { font-size: 13px; color: var(--chalk); margin-bottom: 6px; }
+    .library-body h4 { font-family: var(--font-display); font-size: 14px; color: var(--fire-amber); margin: 14px 0 6px; }
+
+    /* =========================================================
+       INCIDENT LOGGER
+    ========================================================= */
+    .logger-form {
+      background: var(--smoke-800);
+      border: 1px solid var(--smoke-600);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--ash);
+      margin-bottom: 6px;
+    }
+    .form-input, .form-textarea, .form-select {
+      width: 100%;
+      background: var(--smoke-700);
+      border: 1px solid var(--smoke-500);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--fire-orange);
+    }
+    .form-textarea { min-height: 100px; resize: vertical; }
+    .form-select option { background: var(--smoke-700); }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* =========================================================
+       CREW MODE
+    ========================================================= */
+    .crew-session-card {
+      background: linear-gradient(135deg, #0a1a2e, #0d0d0f);
+      border: 1px solid #1e3a5f;
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    /* =========================================================
+       BADGES / ACHIEVEMENTS
+    ========================================================= */
+    .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    .badge-item {
+      background: var(--smoke-800);
+      border: 1px solid var(--smoke-600);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .badge-item.earned {
+      border-color: var(--fire-amber);
+      background: rgba(243,156,18,0.05);
+    }
+    .badge-item.locked { opacity: 0.4; }
+    .badge-icon { font-size: 36px; margin-bottom: 8px; }
+    .badge-name { font-family: var(--font-display); font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .badge-desc { font-size: 11px; color: var(--ash); line-height: 1.4; }
+
+    /* =========================================================
+       CONFETTI
+    ========================================================= */
+    .confetti-piece {
+      position: fixed;
+      width: 10px; height: 10px;
+      top: -20px;
+      border-radius: 2px;
+      animation: confetti-fall linear forwards;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    @keyframes confetti-fall {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* =========================================================
+       QUICK DRILL OVERLAY
+    ========================================================= */
+    #drill-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.96);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 20px;
+    }
+    #drill-overlay.open { display: flex; }
+    .drill-timer-big {
+      font-family: var(--font-display);
+      font-size: 80px;
+      font-weight: 700;
+      color: var(--fire-amber);
+      line-height: 1;
+      margin-bottom: 20px;
+      text-shadow: 0 0 40px rgba(243,156,18,0.5);
+    }
+    .drill-question {
+      font-family: var(--font-display);
+      font-size: 22px;
+      text-align: center;
+      max-width: 600px;
+      margin-bottom: 30px;
+      line-height: 1.4;
+    }
+    .drill-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 600px; }
+    .drill-answer {
+      background: var(--smoke-700);
+      border: 2px solid var(--smoke-500);
+      border-radius: 10px;
+      padding: 14px;
+      cursor: pointer;
+      font-size: 14px;
+      text-align: center;
+      transition: all 0.2s;
+      font-family: var(--font-body);
+      color: var(--white);
+    }
+    .drill-answer:hover { border-color: var(--fire-orange); background: rgba(230,126,34,0.15); }
+    .drill-answer.correct { border-color: var(--green-go); background: rgba(39,174,96,0.2); }
+    .drill-answer.wrong { border-color: var(--danger); background: rgba(231,76,60,0.2); }
+
+    /* =========================================================
+       DASHBOARD LAYOUT CLASSES (responsive-first)
+    ========================================================= */
+    .dash-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .dash-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .stats-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* History metrics row */
+    .hist-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    /* Crew grid */
+    .crew-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    /* =========================================================
+       BOTTOM NAV (mobile only)
+    ========================================================= */
+    #bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #0f1012;
+      border-top: 1px solid var(--smoke-600);
+      z-index: 200;
+      padding: 0;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .bottom-nav-inner {
+      display: flex;
+      justify-content: space-around;
+    }
+    .bnav-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--ash);
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.5px;
+      padding: 10px 4px 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s;
+    }
+    .bnav-btn i { font-size: 18px; }
+    .bnav-btn.active { color: var(--fire-amber); }
+    .bnav-btn span { font-size: 9px; }
+
+    /* =========================================================
+       RESPONSIVE
+    ========================================================= */
+    @media (max-width: 700px) {
+      /* Nav: hide text labels, show icons only */
+      #topnav { height: 52px; padding: 0 10px; }
+      .nav-tabs { display: none; }
+      .brand-name { font-size: 13px; letter-spacing: 1px; }
+      .brand-sub { font-size: 8px; letter-spacing: 2px; }
+      .nav-right { gap: 6px; }
+      .streak-badge { font-size: 10px; padding: 3px 8px; }
+      .btn-sm { padding: 5px 8px; font-size: 10px; }
+
+      /* Show bottom nav */
+      #bottom-nav { display: block; }
+
+      /* Pages get bottom padding for nav */
+      #app { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+      .page { padding: 12px 10px; }
+
+      /* Dashboard: stack all cards vertically */
+      .dash-top {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .dash-bottom {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .stats-2x2 { grid-template-columns: 1fr 1fr; }
+
+      /* Mastery card compact */
+      .mastery-rank { font-size: 26px !important; }
+      .mastery-card { padding: 18px; }
+
+      /* Drill button */
+      .drill-btn { font-size: 18px; padding: 20px; }
+
+      /* Modal full-screen on mobile */
+      #modal-overlay { padding: 0; align-items: flex-end; }
+      #modal-box { border-radius: var(--radius-lg) var(--radius-lg) 0 0; max-height: 92vh; overflow-y: auto; }
+
+      /* Cues: single column */
+      .cue-grid { grid-template-columns: 1fr; }
+
+      /* Score number */
+      .score-number { font-size: 72px; }
+      .rpd-breakdown { grid-template-columns: 1fr 1fr; }
+
+      /* Drill overlay */
+      .drill-timer-big { font-size: 60px; }
+      .drill-question { font-size: 17px; }
+      .drill-answers { grid-template-columns: 1fr; }
+
+      /* History metrics */
+      .hist-metrics { grid-template-columns: 1fr 1fr; gap: 8px; }
+
+      /* Crew grid */
+      .crew-grid { grid-template-columns: 1fr; }
+
+      /* Form row */
+      .form-row { grid-template-columns: 1fr; }
+
+      /* Scenario grid: 1 col on very small, 2 on medium mobile */
+      .scenario-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+      .scenario-thumb { height: 100px; }
+
+      /* Page title */
+      .page-title { font-size: 22px; }
+
+      /* Filter pills scroll horizontal */
+      .filter-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; }
+      .filter-row::-webkit-scrollbar { display: none; }
+
+      /* Stat pill */
+      .stat-pill .val { font-size: 22px; }
+    }
+
+    @media (min-width: 701px) and (max-width: 1024px) {
+      /* Tablet: 2-col dashboard */
+      .dash-top { grid-template-columns: 1fr 1fr; }
+      .hist-metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* =========================================================
+       SCROLL UTILITY
+    ========================================================= */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--smoke-900); }
+    ::-webkit-scrollbar-thumb { background: var(--smoke-600); border-radius: 3px; }
+
+    /* =========================================================
+       MISC UTILITIES
+    ========================================================= */
+    .text-red    { color: var(--fire-red); }
+    .text-orange { color: var(--fire-orange); }
+    .text-amber  { color: var(--fire-amber); }
+    .text-green  { color: var(--green-go); }
+    .text-blue   { color: var(--blue-cool); }
+    .text-ash    { color: var(--ash); }
+    .text-chalk  { color: var(--chalk); }
+    .text-danger { color: var(--danger); }
+
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .gap-8 { gap: 8px; }
+    .gap-12 { gap: 12px; }
+    .mb-8 { margin-bottom: 8px; }
+    .mb-16 { margin-bottom: 16px; }
+    .mb-24 { margin-bottom: 24px; }
+
+    .tag {
+      display: inline-block;
+      background: var(--smoke-700);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      color: var(--chalk);
+    }
+
+    /* Voice placeholder button */
+    .voice-btn {
+      background: var(--smoke-700);
+      border: 1px dashed var(--smoke-500);
+      color: var(--ash);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    .voice-btn:hover { border-color: var(--fire-orange); color: var(--fire-orange); }
+
+    /* Expectancy violation warning */
+    .expectancy-warn {
+      background: rgba(231,76,60,0.1);
+      border: 1px solid var(--danger);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      color: #fca5a5;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    /* Rank badge */
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(243,156,18,0.1);
+      border: 1px solid var(--fire-amber);
+      color: var(--fire-amber);
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      padding: 4px 12px;
+      border-radius: 6px;
+    }
+
+    /* Section divider */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--smoke-600);
+      margin: 20px 0;
+    }
+
+    /* Pulsing indicator */
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(192,57,43,0.4); }
+      70%  { box-shadow: 0 0 0 12px rgba(192,57,43,0); }
+      100% { box-shadow: 0 0 0 0 rgba(192,57,43,0); }
+    }
+    .live-pulse { animation: pulse-ring 2s infinite; }
+
+    /* Score color helpers */
+    .score-excellent { color: #4ade80; }
+    .score-good      { color: var(--fire-amber); }
+    .score-fair      { color: var(--fire-orange); }
+    .score-poor      { color: var(--danger); }
+    .ring-excellent  { border: 3px solid #4ade80; background: rgba(74,222,128,0.1); }
+    .ring-good       { border: 3px solid var(--fire-amber); background: rgba(243,156,18,0.1); }
+    .ring-fair       { border: 3px solid var(--fire-orange); background: rgba(230,126,34,0.1); }
+    .ring-poor       { border: 3px solid var(--danger); background: rgba(231,76,60,0.1); }
+  </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel" data-presets="react">
-const { useState } = React;
 
-// ─── STORAGE ──────────────────────────────────────────────────────────────────
-function load(key, fb) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fb; } catch { return fb; } }
-function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
-let _c = Date.now();
-function uid() { return "x" + (++_c).toString(36); }
+<!-- Fire atmosphere canvas -->
+<canvas id="fire-canvas"></canvas>
 
-// ─── COLORS ───────────────────────────────────────────────────────────────────
-const C = {
-  bg0: "#f8f9fa", bg1: "#ffffff", bg2: "#f1f3f5", bg3: "#e9ecef",
-  border: "#dee2e6", borderHi: "#ff8c00",
-  text: "#1a1a1a", textSub: "#495057", textMuted: "#6c757d",
-  orange: "#ff8c00", green: "#00b36b"
-};
+<!-- ============================================================
+     TOP NAV
+============================================================ -->
+<nav id="topnav">
+  <div class="brand">
+    <i class="fas fa-fire brand-icon"></i>
+    <div>
+      <div class="brand-name">COMMAND INSTINCT</div>
+      <span class="brand-sub">FIREGROUND DECISION TRAINER</span>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard')"><i class="fas fa-tachometer-alt"></i> DASHBOARD</button>
+    <button class="nav-tab" onclick="showPage('scenarios')"><i class="fas fa-fire-alt"></i> SCENARIOS</button>
+    <button class="nav-tab" onclick="showPage('history')"><i class="fas fa-history"></i> HISTORY</button>
+    <button class="nav-tab" onclick="showPage('crew')"><i class="fas fa-users"></i> CREW MODE</button>
+    <button class="nav-tab" onclick="showPage('logger')"><i class="fas fa-book-open"></i> INCIDENT LOG</button>
+    <button class="nav-tab" onclick="showPage('library')"><i class="fas fa-graduation-cap"></i> LIBRARY</button>
+    <button class="nav-tab" onclick="showPage('badges')"><i class="fas fa-medal"></i> BADGES</button>
+  </div>
+  <div class="nav-right">
+    <div class="streak-badge"><i class="fas fa-flame"></i> <span id="nav-streak">0</span>-DAY STREAK</div>
+    <button class="btn-sm" onclick="exportStateJSON()" title="Export full app state as JSON"><i class="fas fa-download"></i> BACKUP</button>
+    <button class="btn-sm" onclick="importStateJSON()" title="Import a previously exported JSON backup" style="background:var(--blue-cool);"><i class="fas fa-upload"></i> RESTORE</button>
+    <button class="btn-sm" id="auto-backup-btn" onclick="toggleAutoBackup()" title="Enable auto-backup (Chrome/Edge only)" style="background:var(--smoke-600);"><i class="fas fa-sync"></i> AUTO</button>
+  </div>
+</nav>
 
-// ─── VIRTUES (Complete) ───────────────────────────────────────────────────────
-const VIRTUES = {
-  L: { key:"L", label:"Love", icon:"❤️", tagline:"Others-first in a me-first culture", color:"#ff4d4d", bg:"#fff0f0", border:"#ff8c00",
-       scoreMeaning: "0=Never • 1=Rarely • 2=Sometimes • 3=Consistently puts others first",
-       strong: ["Celebrates teammates' success", "Shows genuine kindness", "Puts team above self"],
-       weak:   ["Selfish on and off the field", "Dismisses or ignores teammates", "Only cheers for own highlights"],
-       develop: ["After each game, name one teammate who helped you win", "Do one act of encouragement before you leave the field", "Pray: 'Lord, help me love my teammates the way You love me'"] },
-  P: { key:"P", label:"Peace", icon:"☮️", tagline:"Calm anchored in Christ", color:"#00b36b", bg:"#f0fff4", border:"#ff8c00",
-       scoreMeaning: "0=Constant anxiety • 1=Occasional calm • 2=Usually calm • 3=Peace that guards the heart",
-       strong: ["Stays composed under pressure", "Calms teammates in tense moments", "Bounces back quickly from mistakes"],
-       weak:   ["Anxious or panicked when things go wrong", "Spreads tension to teammates", "Dwells on errors during play"],
-       develop: ["Practice three slow breaths before any big moment", "Write down one worry this week and give it to God in prayer", "Memorize Phil. 4:7 — let it anchor your pregame routine"] },
-  S: { key:"S", label:"Self-Control", icon:"🛡️", tagline:"Responding instead of reacting", color:"#0077cc", bg:"#f0f8ff", border:"#ff8c00",
-       scoreMeaning: "0=Frequent outbursts • 1=Improving • 2=Usually controlled • 3=Strong self-discipline",
-       strong: ["Responds to bad calls without blowing up", "Keeps emotions in check under provocation", "Leads by example in discipline"],
-       weak:   ["Frequent outbursts or meltdowns", "Argues with officials or coaches", "Lets frustration hurt performance"],
-       develop: ["Identify your #1 trigger — name it, then make a plan for it", "After a bad call, count to 5 before you react", "Ask a trusted teammate to hold you accountable this week"] },
-  G: { key:"G", label:"Gentleness", icon:"🌿", tagline:"Strength under control", color:"#9c4dff", bg:"#f8f0ff", border:"#ff8c00",
-       scoreMeaning: "0=Often harsh • 1=Sometimes gentle • 2=Usually gentle • 3=Strength under control",
-       strong: ["Encourages struggling teammates", "Competes hard without being cruel", "Uses words that build up, not tear down"],
-       weak:   ["Often harsh or cutting with words", "Intimidates or belittles others", "Confuses meanness with toughness"],
-       develop: ["Before criticizing a teammate, ask: 'Is this kind AND true?'", "Find one struggling player this week and intentionally encourage them", "Journal: where did strength AND gentleness show up together today?"] },
-  H: { key:"H", label:"Humility", icon:"🙏", tagline:"Playing from identity, not for identity", color:"#ff8c00", bg:"#fff8f0", border:"#ff8c00",
-       scoreMeaning: "0=Very prideful • 1=Occasional humility • 2=Growing humility • 3=Consistently humble",
-       strong: ["Credits teammates and coaches for success", "Accepts coaching without defensiveness", "Secure enough to celebrate others"],
-       weak:   ["Takes credit, deflects blame", "Gets defensive when corrected", "Needs to be the star"],
-       develop: ["After your next win, publicly credit two specific teammates", "When corrected by a coach, respond: 'Thank you, I'll work on that'", "Ask yourself: 'Am I playing TO prove something or FROM knowing who I am?'"] },
-  Gr: { key:"Gr", label:"Gratitude", icon:"🙌", tagline:"Thankful in all circumstances", color:"#ffaa00", bg:"#fffdf0", border:"#ff8c00",
-       scoreMeaning: "0=Very entitled • 1=Occasional thanks • 2=Usually grateful • 3=Thankful in all circumstances",
-       strong: ["Thanks coaches, officials, and opponents", "Grateful for the opportunity to compete", "Positive attitude win or lose"],
-       weak:   ["Entitled attitude about playing time or roles", "Rarely thanks others", "Complains about conditions, calls, or teammates"],
-       develop: ["Start every practice with one thing you're grateful for about this team", "Write a one-line thank-you to a coach or teammate this week", "After a loss, find three genuine things to be thankful for before you leave"] },
-  J: { key:"J", label:"Joy", icon:"🎉", tagline:"Delight that outlasts the score", color:"#ff6600", bg:"#fff4f0", border:"#ff8c00",
-       scoreMeaning: "0=Joy is gone • 1=Rare joy • 2=Usually joyful • 3=Consistent delight",
-       strong: ["Genuine enjoyment of the game", "Joy that doesn't depend on the scoreboard", "Lifts the energy of those around them"],
-       weak:   ["Only happy when winning", "Drains team energy with negativity", "Has lost the love of the game"],
-       develop: ["Recall why you first fell in love with this sport — write it down", "Find one moment in each practice to just enjoy the game", "Remind yourself: the scoreboard is temporary, but who you're becoming is not"] }
-};
+<!-- ============================================================
+     BOTTOM NAV (mobile)
+============================================================ -->
+<nav id="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bnav-btn active" id="bnav-dashboard" onclick="showPage('dashboard'); setActiveBottomNav('dashboard')">
+      <i class="fas fa-tachometer-alt"></i><span>DASH</span>
+    </button>
+    <button class="bnav-btn" id="bnav-scenarios" onclick="showPage('scenarios'); setActiveBottomNav('scenarios')">
+      <i class="fas fa-fire-alt"></i><span>TRAIN</span>
+    </button>
+    <button class="bnav-btn" id="bnav-history" onclick="showPage('history'); setActiveBottomNav('history')">
+      <i class="fas fa-history"></i><span>LOG</span>
+    </button>
+    <button class="bnav-btn" id="bnav-library" onclick="showPage('library'); setActiveBottomNav('library')">
+      <i class="fas fa-graduation-cap"></i><span>LEARN</span>
+    </button>
+    <button class="bnav-btn" id="bnav-badges" onclick="showPage('badges'); setActiveBottomNav('badges')">
+      <i class="fas fa-medal"></i><span>BADGES</span>
+    </button>
+  </div>
+</nav>
 
-const SCORE_LABELS = ["Missing", "Emerging", "Developing", "Strong"];
+<!-- ============================================================
+     PAGE: DASHBOARD
+============================================================ -->
+<div id="page-dashboard" class="page active">
+  <div class="dash-top">
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-function getCombo(scores) {
-  const strong = Object.values(scores).filter(v => v === 3).length;
-  const developing = Object.values(scores).filter(v => v >= 2).length;
-  const avg = (Object.values(scores).reduce((a,b) => a + b, 0) / 7).toFixed(1);
+    <!-- Mastery card -->
+    <div class="mastery-card">
+      <div class="mastery-label">CURRENT RANK</div>
+      <div class="mastery-rank" id="dash-rank">—</div>
+      <div class="mastery-stars" id="dash-stars">☆☆☆☆☆</div>
+      <div class="prog-bar-wrap">
+        <div class="prog-bar" id="dash-progbar" style="width:5%"></div>
+      </div>
+      <div style="font-size:12px; color:var(--ash); margin-top:8px;" id="dash-mastery-pct">0% RPD Mastery</div>
+    </div>
 
-  if (strong >= 5) return { label: "Kingdom Competitor", icon: "🏆", desc: `Avg ${avg}/3`, color: C.orange, progress: 95 };
-  if (developing >= 6) return { label: "Strong Disciple", icon: "🌟", desc: `Avg ${avg}/3`, color: C.green, progress: 85 };
-  return { label: "Developing Disciple", icon: "🌱", desc: `Avg ${avg}/3`, color: "#fd7e14", progress: Math.round(developing / 7 * 100) };
+    <!-- Stats 2x2 -->
+    <div class="stats-2x2">
+      <div class="stat-pill"><div class="val" id="stat-sessions">0</div><div class="lbl">SESSIONS</div></div>
+      <div class="stat-pill"><div class="val" id="stat-avg">—</div><div class="lbl">AVG SCORE</div></div>
+      <div class="stat-pill"><div class="val" id="stat-streak">0</div><div class="lbl">STREAK</div></div>
+      <div class="stat-pill"><div class="val" id="stat-best">—</div><div class="lbl">BEST SCORE</div></div>
+    </div>
+
+    <!-- Quick Drill -->
+    <div>
+      <button class="drill-btn live-pulse" onclick="openQuickDrill()">
+        <i class="fas fa-bolt" style="font-size:28px;"></i>
+        60-SEC RPD DRILL
+      </button>
+      <div style="font-size:12px; color:var(--ash); text-align:center; margin-top:10px;">
+        Pattern recognition under pressure
+      </div>
+    </div>
+  </div>
+
+  <!-- Daily challenge + Recent activity -->
+  <div class="dash-bottom">
+    <div class="daily-card">
+      <div class="daily-badge">DAILY CHALLENGE</div>
+      <div style="font-family:var(--font-display); font-size:17px; font-weight:600; margin-bottom:6px;" id="daily-title">Loading...</div>
+      <div style="font-size:13px; color:var(--ash); margin-bottom:16px;" id="daily-desc">—</div>
+      <button class="modal-btn modal-btn-primary" onclick="startDailyChallenge()" style="font-size:13px; padding:12px;">
+        <i class="fas fa-play"></i> TAKE THE CHALLENGE
+      </button>
+    </div>
+
+    <div class="card">
+      <div style="font-family:var(--font-display); font-size:14px; font-weight:600; letter-spacing:1px; margin-bottom:14px; color:var(--ash);">
+        <i class="fas fa-chart-line text-orange"></i> RECENT SESSIONS
+      </div>
+      <div id="dash-recent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE: SCENARIOS
+============================================================ -->
+<div id="page-scenarios" class="page">
+  <div class="page-title">CHOOSE YOUR FIRE</div>
+  <div class="page-sub">Select a scenario to begin RPD training. Harder scenarios unlock as you progress.</div>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+    <div class="filter-row" style="margin-bottom:0; flex:1;">
+      <button class="filter-pill active" onclick="filterScenarios('all', this)">ALL</button>
+      <button class="filter-pill" onclick="filterScenarios('residential', this)">RESIDENTIAL</button>
+      <button class="filter-pill" onclick="filterScenarios('commercial', this)">COMMERCIAL</button>
+      <button class="filter-pill" onclick="filterScenarios('highrise', this)">HIGH-RISE</button>
+      <button class="filter-pill" onclick="filterScenarios('industrial', this)">INDUSTRIAL</button>
+      <button class="filter-pill" onclick="filterScenarios('wildland', this)">WILDLAND</button>
+      <button class="filter-pill" onclick="filterScenarios('hazmat', this)">HAZMAT</button>
+      <button class="filter-pill" onclick="filterScenarios('mci', this)">MCI</button>
+      <button class="filter-pill" onclick="filterScenarios('special', this)">SPECIAL OPS</button>
+    </div>
+    <button class="btn-sm" onclick="openImportDialog()" style="flex-shrink:0; white-space:nowrap;">
+      <i class="fas fa-plus"></i> ADD SCENARIOS
+    </button>
+  </div>
+
+  <div class="scenario-grid" id="scenario-grid"></div>
+</div>
+
+<!-- ============================================================
+     PAGE: HISTORY
+============================================================ -->
+<div id="page-history" class="page">
+  <div class="page-title">TRAINING HISTORY</div>
+  <div class="page-sub">Every session logged. Every lesson earned.</div>
+
+  <!-- RPD metric trends -->
+  <div class="hist-metrics">
+    <div class="stat-pill">
+      <div class="val text-green" id="h-cue-acc">—</div>
+      <div class="lbl">CUE ACCURACY</div>
+    </div>
+    <div class="stat-pill">
+      <div class="val text-blue" id="h-sim-fid">—</div>
+      <div class="lbl">SIM FIDELITY</div>
+    </div>
+    <div class="stat-pill">
+      <div class="val text-amber" id="h-dec-spd">—</div>
+      <div class="lbl">DECISION SPEED</div>
+    </div>
+    <div class="stat-pill">
+      <div class="val text-orange" id="h-total-time">—</div>
+      <div class="lbl">TOTAL HOURS</div>
+    </div>
+  </div>
+
+  <div id="history-list"></div>
+</div>
+
+<!-- ============================================================
+     PAGE: CREW MODE
+============================================================ -->
+<div id="page-crew" class="page">
+  <div class="page-title">CREW MODE</div>
+  <div class="page-sub">Run tactical decision games with your entire crew on one device.</div>
+
+  <div class="crew-grid">
+    <div class="crew-session-card">
+      <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:2px; color:var(--blue-cool); margin-bottom:8px;">START NEW SESSION</div>
+      <div style="font-family:var(--font-display); font-size:20px; font-weight:600; margin-bottom:12px;">Hot Seat Drill</div>
+      <div style="font-size:13px; color:var(--chalk); margin-bottom:16px;">
+        One scenario, one screen. Each firefighter takes the hot seat and makes a timed decision. Crew votes on best action. Perfect for shift training.
+      </div>
+      <div class="form-group">
+        <label class="form-label">CREW MEMBERS (enter names, comma-separated)</label>
+        <input type="text" class="form-input" id="crew-names" placeholder="e.g. Smith, Jones, Williams, Torres">
+      </div>
+      <button class="modal-btn modal-btn-primary" onclick="startCrewSession()">
+        <i class="fas fa-play"></i> START HOT SEAT DRILL
+      </button>
+    </div>
+
+    <div class="crew-session-card">
+      <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:2px; color:var(--blue-cool); margin-bottom:8px;">SHARE CODE</div>
+      <div style="font-family:var(--font-display); font-size:20px; font-weight:600; margin-bottom:12px;">Session Code</div>
+      <div style="font-size:13px; color:var(--chalk); margin-bottom:16px;">
+        Generate a session code for your crew. They enter it on their own devices to sync on the same scenario and compare scores.
+      </div>
+      <div style="font-family:var(--font-display); font-size: 40px; font-weight:700; letter-spacing:8px; color:var(--fire-amber); text-align:center; padding:16px; background:var(--smoke-700); border-radius:10px; margin-bottom:16px;" id="session-code">—</div>
+      <button class="modal-btn modal-btn-secondary" onclick="generateCode()">
+        <i class="fas fa-sync"></i> GENERATE NEW CODE
+      </button>
+    </div>
+  </div>
+
+  <!-- Crew leaderboard -->
+  <div class="card">
+    <div style="font-family:var(--font-display); font-size:15px; font-weight:600; letter-spacing:1px; margin-bottom:16px;">
+      <i class="fas fa-trophy text-amber"></i> CREW LEADERBOARD
+    </div>
+    <div id="crew-leaderboard">
+      <div style="color:var(--ash); font-size:13px;">No crew session started yet. Launch a Hot Seat Drill above.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE: INCIDENT LOGGER
+============================================================ -->
+<div id="page-logger" class="page">
+  <div class="page-title">INCIDENT LOGGER</div>
+  <div class="page-sub">Log real calls. Build your own custom training scenarios from your experience.</div>
+
+  <div class="logger-form">
+    <div style="font-family:var(--font-display); font-size:16px; font-weight:600; margin-bottom:16px; color:var(--fire-amber);">
+      <i class="fas fa-plus-circle"></i> LOG A REAL INCIDENT
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">DATE</label>
+        <input type="date" class="form-input" id="log-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">INCIDENT TYPE</label>
+        <select class="form-select" id="log-type">
+          <option>Structure Fire – Residential</option>
+          <option>Structure Fire – Commercial</option>
+          <option>High-Rise Fire</option>
+          <option>Vehicle Fire</option>
+          <option>MVC w/ Entrapment</option>
+          <option>Hazmat</option>
+          <option>Wildland / Interface</option>
+          <option>Mass Casualty Incident</option>
+          <option>Water / Ice Rescue</option>
+          <option>Trench / Collapse</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">DISPATCH / INITIAL REPORT</label>
+      <input type="text" class="form-input" id="log-dispatch" placeholder="Describe the dispatch exactly as received">
+    </div>
+    <div class="form-group">
+      <label class="form-label">KEY CUES YOU OBSERVED ON ARRIVAL</label>
+      <textarea class="form-textarea" id="log-cues" placeholder="List specific visual, auditory, or situational cues that triggered your pattern recognition..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">WHAT PATTERN DID YOU RECOGNIZE?</label>
+      <input type="text" class="form-input" id="log-pattern" placeholder="e.g. Ventilation-limited fire, Rapidly growing offensive, Defensive only...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">DECISION / ACTION TAKEN</label>
+      <textarea class="form-textarea" id="log-action" placeholder="What did you decide and why? What was your mental simulation?"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">OUTCOME & LESSONS LEARNED</label>
+      <textarea class="form-textarea" id="log-outcome" placeholder="What happened? What would you do differently? Any expectancy violations?"></textarea>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="modal-btn modal-btn-primary" onclick="saveIncident()" style="flex:1; padding:14px; font-size:14px;">
+        <i class="fas fa-save"></i> LOG THIS INCIDENT
+      </button>
+      <button class="modal-btn modal-btn-secondary" onclick="convertToScenario()" style="flex:1; padding:14px; font-size:14px;">
+        <i class="fas fa-magic"></i> CONVERT TO SCENARIO
+      </button>
+    </div>
+  </div>
+
+  <div id="logged-incidents"></div>
+</div>
+
+<!-- ============================================================
+     PAGE: LIBRARY
+============================================================ -->
+<div id="page-library" class="page">
+  <div class="page-title">EXPERT LIBRARY</div>
+  <div class="page-sub">The science and art of fireground decision-making. Study this. Own it.</div>
+
+  <div id="library-content"></div>
+</div>
+
+<!-- ============================================================
+     PAGE: BADGES
+============================================================ -->
+<div id="page-badges" class="page">
+  <div class="page-title">ACHIEVEMENTS & BADGES</div>
+  <div class="page-sub">Earn these by proving your command instinct under pressure.</div>
+  <div class="badge-grid" id="badge-grid"></div>
+</div>
+
+</div><!-- /#app -->
+
+<!-- ============================================================
+     SCENARIO MODAL (Player)
+============================================================ -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div id="modal-header">
+      <div>
+        <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:2px; color:rgba(255,255,255,0.6); margin-bottom:2px;" id="modal-cat">—</div>
+        <div id="modal-scenario-title">Scenario</div>
+      </div>
+      <button id="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-step-bar"></div>
+    <div class="timer-ring-wrap">
+      <svg id="timer-svg" width="36" height="36" viewBox="0 0 36 36">
+        <circle cx="18" cy="18" r="15" fill="none" stroke="#333" stroke-width="3"/>
+        <circle id="timer-circle" cx="18" cy="18" r="15" fill="none" stroke="#F39C12" stroke-width="3"
+          stroke-dasharray="94.2" stroke-dashoffset="0" stroke-linecap="round"
+          transform="rotate(-90 18 18)"/>
+      </svg>
+      <div>
+        <div class="timer-text"><span id="timer-display">—</span></div>
+        <div class="timer-label">TIME ON SCENE</div>
+      </div>
+      <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+        <div class="tag" id="modal-diff-tag">—</div>
+        <div class="tag" id="modal-step-label">DISPATCH</div>
+      </div>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     QUICK DRILL OVERLAY
+============================================================ -->
+<div id="drill-overlay">
+  <div class="drill-timer-big" id="drill-timer">60</div>
+  <div class="drill-question" id="drill-question">Loading...</div>
+  <div class="drill-answers" id="drill-answers"></div>
+  <button onclick="closeDrill()" style="margin-top:30px; background:none; border:1px solid var(--smoke-500); color:var(--ash); padding:10px 24px; border-radius:8px; cursor:pointer; font-size:13px;">
+    END DRILL
+  </button>
+</div>
+
+<script>
+/* ================================================================
+   DATA: ALL SCENARIOS
+   Add new ones in the SCENARIOS array below — each object follows
+   this structure. `steps` array controls the training flow.
+================================================================ */
+
+const SCENARIOS = [
+  /* ─── 01. RESIDENTIAL HOUSE FIRE ─── */
+  {
+    id: 1,
+    title: "The Maple Street House Fire",
+    category: "residential",
+    categoryLabel: "RESIDENTIAL",
+    difficulty: "basic",
+    icon: "🏠",
+    bgColor: "#2a1505",
+    dispatch: "<span class='callsign'>DISPATCH → ENGINE 1, LADDER 3:</span> Respond to 4421 Maple Street for a reported structure fire. Neighbor called in. Smoke showing. Time: 0214 hours.",
+    arrival: "You arrive to find a single-story 1950s ranch-style home. Night scene. One end of the house is dark; the other shows orange glow through bedroom windows.",
+    cues: [
+      { text: "Heavy gray smoke pushing from the eaves on the B side", correct: true },
+      { text: "Bedroom windows intact — no auto-ventilation", correct: true },
+      { text: "Toys and a bicycle in the driveway", correct: true },
+      { text: "Orange glow visible through curtains", correct: true },
+      { text: "Car in the driveway — occupants possibly home", correct: true },
+      { text: "Neighbor says 'they always leave the light on'", correct: false },
+      { text: "House number clearly visible from street", correct: false },
+      { text: "Mailbox at curb is red", correct: false }
+    ],
+    patternOptions: [
+      "Ventilation-limited fire — fuel-rich, oxygen-poor. Possibility of rapid transition.",
+      "Standard residential offensive — grow quickly, primary search immediately.",
+      "Defensive attack only — fire too advanced for interior.",
+      "Await safety officer before entry — nighttime scene."
+    ],
+    correctPattern: 0,
+    mentalSimHint: "Consider: If you open the front door, what happens to the fire dynamic? Who is likely inside at 0214?",
+    expectancyViolation: "If smoke volume suddenly decreases or changes color dramatically, ABORT — flashover precursor.",
+    actions: [
+      { text: "Stretch 1¾\" line to front door. Crew makes entry for primary search while officer controls ventilation.", score: 94, cueScore: 88, simScore: 90, feedback: "Outstanding. You recognized the ventilation-limited signature (gray pushing smoke, intact glazing) and made an aggressive but controlled offensive push. Controlling the door while stretching is the RPD move that saves lives. Klein's research calls this 'typicality' — your pattern library flagged the correct prototype instantly." },
+      { text: "Set up master stream from exterior first, then consider entry.", score: 35, cueScore: 40, simScore: 30, feedback: "Master stream on a residential fire at this stage means the room gets flooded and anyone inside is in danger from steam conversion. Your mental simulation didn't run to the end. Klein: 'Experts don't evaluate options — they simulate the first workable one.'" },
+      { text: "Force entry through back door to avoid creating flow path from front.", score: 72, cueScore: 80, simScore: 65, feedback: "Good instinct on flow path control, but rear entry without crew coordination and unchecked means you split your force at 0214 hours. Better to control the front and use coordinated vertical ventilation." },
+      { text: "Establish water supply first, delay entry 3–4 minutes.", score: 48, cueScore: 55, simScore: 40, feedback: "With occupants likely inside at 0214, every 30 seconds matters. UL research shows survivable space collapses faster in ventilation-limited fires once a door opens. You should have water on the fire within 60 seconds of arrival." }
+    ]
+  },
+
+  /* ─── 02. COMMERCIAL STRIP MALL ─── */
+  {
+    id: 2,
+    title: "The Strip Mall at Night",
+    category: "commercial",
+    categoryLabel: "COMMERCIAL",
+    difficulty: "standard",
+    icon: "🏪",
+    bgColor: "#1a1505",
+    dispatch: "<span class='callsign'>DISPATCH → ENGINE 4, ENGINE 7, LADDER 2:</span> Structure fire, 2100 block Commerce Drive. Multiple units reporting heavy smoke from strip mall. No life safety reported.",
+    arrival: "Six-unit strip mall, 1970s concrete block construction. Heavy, dense black smoke pushing under pressure from the roof vent areas. Roll-up steel doors on all units. Adjacent units: dry cleaner (chemicals), nail salon, a church thrift shop.",
+    cues: [
+      { text: "Black, pressurized smoke — hydrocarbon products burning", correct: true },
+      { text: "Roof showing signs of structural compromise — center bowing", correct: true },
+      { text: "Roll-up doors locked — forced entry required", correct: true },
+      { text: "Adjacent dry cleaner — hazmat concern", correct: true },
+      { text: "No working sprinkler system visible", correct: true },
+      { text: "Fire likely in one unit with extension threat to exposures", correct: true },
+      { text: "Parking lot is freshly paved", correct: false },
+      { text: "There's a fast food cup near the door", correct: false }
+    ],
+    patternOptions: [
+      "Offensive push — force roll-up, stretch inside, aggressive attack.",
+      "Defensive — master streams, protect exposures. Don't enter.",
+      "Transitional attack — exterior knock, then evaluate entry.",
+      "Await hazmat for dry cleaner concern before any water application."
+    ],
+    correctPattern: 1,
+    mentalSimHint: "Run this: You force the roll-up. What happens to the smoke volume and fire behavior? What's in the dry cleaner next door?",
+    expectancyViolation: "If you hear a sustained low rumble from the roof — get everyone out. Parapet collapse is imminent.",
+    actions: [
+      { text: "Defensive operation. Two master streams on the fire unit. Engine 7 protects dry cleaner exposure with handlines.", score: 95, cueScore: 95, simScore: 92, feedback: "Textbook command decision. Black pressurized smoke + roof compromise + 1970s concrete block = Don't go in. Your RPD pattern library correctly identified the 'taxpayer fire' archetype. Protecting the hazmat exposure and keeping crews outside saved lives here. NFPA 1700: 'Structural indicators of imminent collapse override all other priorities.'" },
+      { text: "Force roll-up, two-line offensive push.", score: 28, cueScore: 30, simScore: 20, feedback: "This is the decision that gets firefighters killed. The roof is compromised. Black pressurized smoke means extreme heat load. Forcing that roll-up is creating a flow path into a potentially pre-flashover or post-flashover compartment. Mental simulation failure — you didn't run the scenario to its conclusion." },
+      { text: "Transitional: hit it from the outside, reassess.", score: 65, cueScore: 70, simScore: 60, feedback: "Transitional was a reasonable instinct, but with a compromised roof and hazmat exposure next door, defensive is the only correct read. Transitional implies potential entry — that's off the table here." },
+      { text: "Wait for hazmat unit before any water application.", score: 15, cueScore: 20, simScore: 10, feedback: "Waiting does nothing to slow fire spread. The hazmat concern is secondary — start master streams now. Your mental simulation didn't account for fire spread speed." }
+    ]
+  },
+
+  /* ─── 03. HIGH-RISE ─── */
+  {
+    id: 3,
+    title: "The 14th Floor",
+    category: "highrise",
+    categoryLabel: "HIGH-RISE",
+    difficulty: "advanced",
+    icon: "🏢",
+    bgColor: "#050f1a",
+    dispatch: "<span class='callsign'>DISPATCH → ENGINE 3, ENGINE 6, LADDER 5, BC-1:</span> High-rise fire, 45-story residential tower, 14th floor. Multiple calls. Elevator recall active. 0830 hours.",
+    arrival: "Light smoke in lobby. Stairwell alpha is pressurized (good sign). Occupants streaming out via stairwell B. Building engineer says fire alarm on 14, no sprinkler activation yet. Stack effect: it's January, exterior -5°F.",
+    cues: [
+      { text: "Stack effect in winter = upward air movement — smoke will rise fast", correct: true },
+      { text: "No sprinkler activation — possible pre-sprinkler zone or system failure", correct: true },
+      { text: "Stairwell A pressurized = tenable egress route", correct: true },
+      { text: "Light lobby smoke = fire is contained to upper floor for now", correct: true },
+      { text: "Elevator recall is active — no elevators available", correct: true },
+      { text: "14 floors of stair climb will fatigue crew", correct: true },
+      { text: "Building is 45 stories tall total", correct: false },
+      { text: "It is 8:30 in the morning", correct: false }
+    ],
+    patternOptions: [
+      "Full evacuation of all 45 floors before entry.",
+      "Send two-firefighter recon team to 14 via stairs, standpipe pack. BC stages at 12.",
+      "Send entire first-alarm assignment up Stairwell A immediately.",
+      "Set up command in lobby, request elevator override, await second alarm."
+    ],
+    correctPattern: 1,
+    mentalSimHint: "14 floors up with full gear. How does that affect your crew when they arrive to the fire? What does stack effect do to smoke on floor 14 once a door opens?",
+    expectancyViolation: "If you arrive to 14 and smoke is black and under pressure — you have more fire than reported. Go one floor below, reassess, call for more resources immediately.",
+    actions: [
+      { text: "BC commands from 12th. Recon team takes standpipe pack to 14, verifies conditions, reports before any entry.", score: 96, cueScore: 95, simScore: 94, feedback: "This is the RPD move of an experienced high-rise officer. Staging below, recon first, standpipe ready — you've run this scenario mentally 50 times. Stack effect awareness, crew fatigue from 14-floor climb, and sprinkler uncertainty all factored into a cautious, tactical advance. Klein: 'Expert decisions are rarely deliberate — they're the result of thousands of prior simulations.'" },
+      { text: "Send everyone up Stairwell A immediately, full offensive assault.", score: 38, cueScore: 40, simScore: 30, feedback: "Fatigued crews arriving to an unknown fire with no standpipe connection and no recon data is a recipe for a Mayday. High-rise fires are slow, methodical battles. Speed kills here." },
+      { text: "Full building evacuation before entry.", score: 52, cueScore: 60, simScore: 45, feedback: "Evacuating 45 stories in a high-rise with stack effect and one pressurized stairwell creates chaos. You need to reach the fire floor and control it, not generate a stampede in stairwells." },
+      { text: "Stage in lobby and wait for elevator override.", score: 28, cueScore: 30, simScore: 22, feedback: "Waiting in the lobby while 14 burns is a command paralysis failure. Elevator override can be explored but cannot delay your crews beginning the stair advance." }
+    ]
+  },
+
+  /* ─── 04. WILDLAND INTERFACE ─── */
+  {
+    id: 4,
+    title: "The Valley Fire — WUI",
+    category: "wildland",
+    categoryLabel: "WILDLAND INTERFACE",
+    difficulty: "advanced",
+    icon: "🌲",
+    bgColor: "#1a0f00",
+    dispatch: "<span class='callsign'>DISPATCH → ENGINE 9, ENGINE 11, BATTALION 2:</span> Wildland-urban interface fire, 2200 Ridgeline Road. Multiple structures threatened. Red flag conditions. Wind 35 mph gusting 55.",
+    arrival: "You arrive to find a crown fire advancing from the east at roughly 200 acres/hour. Three wood-frame homes in direct path. Residents refusing evacuation. Defensible space on two homes is poor. One home has irrigation running.",
+    cues: [
+      { text: "Crown fire in red flag conditions — rate of spread is extreme", correct: true },
+      { text: "35–55 mph winds mean fire can outrun apparatus", correct: true },
+      { text: "Two homes with poor defensible space = not defensible", correct: true },
+      { text: "One home with irrigation = possibly defensible", correct: true },
+      { text: "Residents refusing evacuation = civilian entanglement risk", correct: true },
+      { text: "Direction of fire spread is documented", correct: true },
+      { text: "The road is paved", correct: false },
+      { text: "One of the homes has a satellite dish", correct: false }
+    ],
+    patternOptions: [
+      "Structure triage: defend the irrigated home, abandon the other two. Force residents to evacuate.",
+      "Attempt to defend all three homes with available resources.",
+      "Full defensive withdrawal — lives not worth risking for structures.",
+      "Split crews: one on each home simultaneously."
+    ],
+    correctPattern: 0,
+    mentalSimHint: "Run it: If you try to defend all three with 35-mph gusting winds and a crown fire, where are your crews in 8 minutes? What's your egress route?",
+    expectancyViolation: "Wind shift. If wind direction changes, every safety zone and escape route is reassessed in real time. LCES is everything.",
+    actions: [
+      { text: "Triage: Identify the irrigated/defensible home, prep it, get all residents out in personal vehicles while you hold that structure. Abandon the other two.", score: 92, cueScore: 90, simScore: 93, feedback: "Structure triage in WUI is the hardest RPD decision — it goes against every instinct to abandon a home. But 10 Standard Firefighting Orders and LCES exist for this exact reason. Your mental simulation accounted for crew safety, egress, and the physics of crown fire behavior. This is what Battalion Chief thinking looks like." },
+      { text: "Defend all three simultaneously.", score: 22, cueScore: 25, simScore: 18, feedback: "With two engines in red flag crown fire conditions, defending all three is resource-impossible and crew-suicidal. If the fire outpaces you — and it will — you have no egress. This is how firefighters die in WUI." },
+      { text: "Full withdrawal — no structure defense.", score: 60, cueScore: 65, simScore: 55, feedback: "Safety-first instinct is never wrong, but the irrigated home IS defensible with your resources. Abandoning a winnable position when you have the tools to hold it is a missed opportunity. Triage gives you the best outcome for everyone." },
+      { text: "Split crews across all three homes.", score: 18, cueScore: 20, simScore: 15, feedback: "Splitting to three locations with limited engines removes crew accountability and makes the Mayday response impossible. In extreme wind conditions, you've just isolated firefighters with no backup and no communication redundancy." }
+    ]
+  },
+
+  /* ─── 05. HAZMAT TANK CAR ─── */
+  {
+    id: 5,
+    title: "The Tank Car Leak",
+    category: "hazmat",
+    categoryLabel: "HAZMAT",
+    difficulty: "advanced",
+    icon: "☣️",
+    bgColor: "#0f1a05",
+    dispatch: "<span class='callsign'>DISPATCH → ENGINE 2, HAZMAT 1, BC-2:</span> Train derailment, one tank car leaking unknown product. Vapor cloud visible. 1.5 miles from downtown. Wind from the west at 12 mph.",
+    arrival: "One tank car off rails, visible liquid release from a valve fitting. Vapor cloud moving east toward a residential neighborhood. ERG guide placard is partially obscured. Three railroad workers in the area, two appear symptomatic (eyes watering, coughing).",
+    cues: [
+      { text: "Vapor cloud moving toward residential area — population at risk", correct: true },
+      { text: "Two symptomatic workers = product is toxic, not just flammable", correct: true },
+      { text: "Placard partially obscured — ID unknown", correct: true },
+      { text: "Liquid release from valve = pressure may be ongoing", correct: true },
+      { text: "Train workers in hot zone without PPE", correct: true },
+      { text: "Wind from west = vapor moving east toward homes", correct: true },
+      { text: "It is daylight", correct: false },
+      { text: "Tank car is silver in color", correct: false }
+    ],
+    patternOptions: [
+      "Approach for placard ID, then consult ERG for action guide.",
+      "Establish hot/warm/cold zones immediately. Remove symptomatic workers. Initiate shelter-in-place for downwind area. Await HAZMAT.",
+      "Apply water fog to vapor cloud to suppress.",
+      "Contact railroad dispatch for MSDS before taking any action."
+    ],
+    correctPattern: 1,
+    mentalSimHint: "Two symptomatic workers + unknown product + vapor cloud. If you approach without PPE, what happens to your crew? What happens to the neighborhood if you spend 10 minutes getting MSDS sheets?",
+    expectancyViolation: "If the vapor cloud ignites — BLEVE risk if tank car is pressurized. Get everyone out of the area immediately and account for your personnel.",
+    actions: [
+      { text: "Hot/warm/cold zones established. Remove workers to cold zone for decon/EMS. Shelter-in-place advisory for downwind neighborhood. Stage HAZMAT team. No entry without Level A.", score: 97, cueScore: 95, simScore: 96, feedback: "Flawless ICS-HAZMAT response. Two symptomatic workers told you everything — this is a toxic release, not just a spill. You protected your crew, initiated life-safety actions for the public, and staged specialized resources. This is BC-level thinking: 'What kills my crew and what kills civilians — fix both at once.'" },
+      { text: "Approach for placard ID.", score: 20, cueScore: 15, simScore: 18, feedback: "With symptomatic workers already showing effects, your crew approaching without Level A PPE puts them in the hot zone. The symptomatic presentation IS your product identification — something toxic and respiratory. Use ERG from a distance." },
+      { text: "Apply water fog to vapor cloud.", score: 35, cueScore: 30, simScore: 32, feedback: "Water fog on an unknown chemical could cause violent reaction, contaminate your water supply, and spread the product. Never apply water to an unknown until you know the product's reactivity with water." },
+      { text: "Wait for MSDS from railroad before acting.", score: 12, cueScore: 10, simScore: 10, feedback: "MSDS arrival time could be 20–40 minutes. The vapor cloud is moving now. Shelter-in-place advisory should be initiated within the first 3 minutes based on observable cues alone. Waiting is not an option." }
+    ]
+  },
+
+  /* ─── 06. MASS CASUALTY INCIDENT ─── */
+  {
+    id: 6,
+    title: "The Festival MCI",
+    category: "mci",
+    categoryLabel: "MASS CASUALTY",
+    difficulty: "advanced",
+    icon: "🚑",
+    bgColor: "#1a0510",
+    dispatch: "<span class='callsign'>DISPATCH → ENGINE 5, RESCUE 2, MED 4, MED 7, BC-3:</span> Mass casualty incident, Riverside Music Festival. Partial stage collapse. Estimated 30–50 injured. Unknown number trapped. MCI protocol activated.",
+    arrival: "Stage scaffolding has collapsed onto a crowd of approximately 400. People are screaming. Obvious critical injuries visible. Bystanders are pulling victims. Multiple cell phones being used — no communication discipline. You are first company on scene.",
+    cues: [
+      { text: "30–50 casualties — this exceeds your resource capacity immediately", correct: true },
+      { text: "Bystanders moving victims — potential spinal injuries being worsened", correct: true },
+      { text: "No unified command yet — you're it until BC arrives", correct: true },
+      { text: "Multiple obvious critical injuries visible", correct: true },
+      { text: "Cell phone congestion may impact radio comms", correct: true },
+      { text: "Structural stability of remaining scaffolding unknown", correct: true },
+      { text: "Festival was sold out", correct: false },
+      { text: "Stage was a well-known band", correct: false }
+    ],
+    patternOptions: [
+      "Begin immediate treatment of the most critically injured first.",
+      "Establish Incident Command, call for additional resources, begin START triage immediately.",
+      "Secure the perimeter and wait for additional resources before approaching.",
+      "Set up treatment areas first, then start triage."
+    ],
+    correctPattern: 1,
+    mentalSimHint: "You have one crew. 50 victims. If you begin treating the first critical you see, what happens to the next 49? What's the one action that saves the most lives per minute right now?",
+    expectancyViolation: "If you hear any sound of structural movement in remaining scaffolding — STOP all operations, account for personnel, evacuate the collapse zone. Secondary collapse is your number one threat.",
+    actions: [
+      { text: "Establish Incident Command. Get additional resources coming. Assign sectors. START triage — tag, move, treat. Designate treatment areas. Get bystanders organized as 'walking wounded helpers.'", score: 96, cueScore: 94, simScore: 95, feedback: "This is the MCI RPD model. You did not get drawn into treating the first victim you saw — the most common MCI mistake. Your pattern library said 'mass casualty = command first, treatment second.' START triage done right is the single highest-yield intervention in a 50-patient MCI. And using bystanders as controlled helpers multiplies your effectiveness." },
+      { text: "Begin treating the most critical injuries immediately.", score: 30, cueScore: 35, simScore: 28, feedback: "The most critical patient in front of you is not the priority — the algorithm for all 50 patients is the priority. If you're treating one red tag, you're ignoring 49 others. This is the trap. START triage, then treatment." },
+      { text: "Perimeter control and await backup.", score: 22, cueScore: 25, simScore: 20, feedback: "Victims are dying while you establish a perimeter. The answer is to do both simultaneously — which means Incident Command is necessary to delegate perimeter to someone else while triage begins." },
+      { text: "Set up treatment areas first.", score: 42, cueScore: 45, simScore: 38, feedback: "Treatment areas are necessary but come after triage. If you set up areas before knowing how many reds, yellows, and greens you have, you'll under-resource the critical area and over-resource the minor." }
+    ]
+  },
+
+  /* ─── 07. INDUSTRIAL FIRE ─── */
+  {
+    id: 7,
+    title: "The Warehouse Maze",
+    category: "industrial",
+    categoryLabel: "INDUSTRIAL",
+    difficulty: "extreme",
+    icon: "🏭",
+    bgColor: "#0d0d1a",
+    dispatch: "<span class='callsign'>DISPATCH → ENGINE 8, ENGINE 10, LADDER 4, HEAVY RESCUE:</span> Industrial fire, Acme Distribution Warehouse, 800,000 sq ft facility. Fire in south quadrant. Night shift workers — 12 unaccounted. Automatic sprinklers reported activated.",
+    arrival: "Enormous warehouse. Loading dock doors open on two sides. Heavy smoke banking down from ceiling height of 40 feet. FLIR shows heat concentration in the back half, south quadrant. Warehouse manager on scene says sprinklers 'kind of' working. Fire appears to be in high-rack storage. Employees last seen near break room on south end.",
+    cues: [
+      { text: "12 unaccounted workers — rescue is the priority", correct: true },
+      { text: "40-foot ceilings — smoke will bank down; visibility window will close", correct: true },
+      { text: "Sprinklers 'kind of' working = possible impairment", correct: true },
+      { text: "High-rack storage fire = potential rack collapse", correct: true },
+      { text: "800,000 sq ft = navigation hazard without guide ropes", correct: true },
+      { text: "FLIR is locating heat concentration — intelligence asset", correct: true },
+      { text: "Night shift = reduced staffing inside warehouse", correct: true },
+      { text: "Loading dock doors are open", correct: false }
+    ],
+    patternOptions: [
+      "Aggressive interior with full crews for immediate rescue.",
+      "FLIR-guided search with guide ropes, two-in/two-out, sprinkler status verified before entry.",
+      "Exterior defensive attack through loading dock openings.",
+      "Wait for more resources — scene too large for available companies."
+    ],
+    correctPattern: 1,
+    mentalSimHint: "Imagine a firefighter 400 feet into a 800,000 sq ft warehouse when sprinklers fail and smoke banks down to 6 feet. What's his egress? Did you leave guide ropes? Did you verify sprinkler status?",
+    expectancyViolation: "If any crew member loses orientation inside — STOP forward movement. Activate PASS device. Fire ground accountability is your most critical life-safety system right now.",
+    actions: [
+      { text: "FLIR-guided entry with guide ropes deployed. Sprinkler status verified with engineer. Two-in/two-out strictly. Search south quadrant using systematic pattern toward break room location.", score: 98, cueScore: 97, simScore: 97, feedback: "Elite-level decision. The FLIR is your intelligence tool — use it. Guide ropes are non-negotiable in a building this size. Sprinkler verification before entry is what separates good firefighters from great ones. And going directly to last-known location (break room, south end) shows you read the tactical cues and ran the right mental simulation. This is how 12 workers come home." },
+      { text: "Aggressive interior push immediately.", score: 25, cueScore: 20, simScore: 22, feedback: "Without guide ropes in 800,000 sq ft, without sprinkler verification, without FLIR — you are sending firefighters into a potential Mayday environment with no recovery mechanism. Firefighter survival is the prerequisite to any rescue." },
+      { text: "Exterior defensive from loading docks.", score: 40, cueScore: 45, simScore: 35, feedback: "With 12 workers inside, you cannot go defensive yet. But you also can't go in blind. The answer is FLIR-guided tactical rescue — not brute force and not defensive surrender." },
+      { text: "Stage for additional resources.", score: 30, cueScore: 35, simScore: 28, feedback: "Workers are dying while you stage. But additional resources should absolutely be called — while you simultaneously begin the FLIR-guided rescue. Do both. Command is a parallel processor, not a sequential one." }
+    ]
+  },
+
+  /* ─── 08. WATER RESCUE ─── */
+  {
+    id: 8,
+    title: "The Ice Rescue",
+    category: "special",
+    categoryLabel: "SPECIAL OPS",
+    difficulty: "advanced",
+    icon: "🧊",
+    bgColor: "#051015",
+    dispatch: "<span class='callsign'>DISPATCH → ENGINE 1, RESCUE 3, MED 6:</span> Ice rescue, Hendricks Pond. Child reported through ice. Bystander on scene. Unknown time of submersion. Air temperature -8°F.",
+    arrival: "Pond is 2.5 acres. Bystander points to a hole in the ice approximately 80 feet from shore. No victim visible at surface. Bystander attempted rescue and is now at water's edge, wet, showing signs of hypothermia. Your rescue team is not specialized ice rescue — you have throw ropes and a rescue sled. Ice rescue team is 12 minutes out.",
+    cues: [
+      { text: "Victim submerged — time critical, mammalian dive reflex may give survival window", correct: true },
+      { text: "Ice thickness unknown — crew member weight could cause secondary fall-through", correct: true },
+      { text: "Bystander is now a secondary victim — hypothermia onset", correct: true },
+      { text: "80 feet from shore — throw rope may not reach", correct: true },
+      { text: "Ice rescue specialists 12 minutes out", correct: true },
+      { text: "No victim visible at surface — may be under ice", correct: true },
+      { text: "Pond is 2.5 acres", correct: false },
+      { text: "Bystander called 911", correct: false }
+    ],
+    patternOptions: [
+      "Immediate crew entry onto ice for victim rescue.",
+      "Throw rope attempt from shore. Treat bystander. Mark hole location. Prepare rescue sled. Get specialists moving faster. Do NOT walk on ice.",
+      "Wait 12 minutes for ice rescue specialists.",
+      "Use apparatus to drive to edge of pond and deploy from vehicle."
+    ],
+    correctPattern: 1,
+    mentalSimHint: "If a firefighter in full gear falls through ice 80 feet from shore in -8°F, what happens? Is trading one life for another an acceptable outcome? What can you do from shore right now?",
+    expectancyViolation: "If you do deploy on the ice with the rescue sled and feel any cracking — withdraw immediately. The sled goes first, the person follows on their belly, spreads weight.",
+    actions: [
+      { text: "Throw rope from shore. Get bystander to EMS immediately. Mark hole with visible reference. Sled team preps. Notify specialists to expedite — any faster route? Aerial ladder over ice?", score: 91, cueScore: 92, simScore: 90, feedback: "You didn't compound the victim count. The bystander is already a secondary casualty — treating them while trying everything possible from shore is exactly right. Cold-water submersion and the mammalian dive reflex mean you have more time than you think, but every second the hole is unmonitored is a lost reference. Your aerial ladder idea? That's expert-level lateral thinking — distribute weight, reach further." },
+      { text: "Send a crew member onto the ice immediately.", score: 20, cueScore: 15, simScore: 18, feedback: "Unknown ice thickness + firefighter in full gear = secondary fall-through. You would now have two victims in the water and your crew count drops by one. The first rule of rescue is: don't become a victim." },
+      { text: "Wait 12 minutes for specialists.", score: 38, cueScore: 40, simScore: 35, feedback: "12 minutes of cold-water submersion is near the outer edge of the survival window. Waiting without attempting any intervention — throw rope, visual marking, bystander treatment — is an abandonment of life-safety mission." },
+      { text: "Drive apparatus to pond edge and deploy from vehicle.", score: 48, cueScore: 50, simScore: 45, feedback: "Apparatus weight on pond edge could collapse the bank and the ice simultaneously, taking a truck and crew into the water. Throw rope and sled are the right tools." }
+    ]
+  },
+
+  /* ─── 09. APARTMENT FIRE WITH MAYDAY ─── */
+  {
+    id: 9,
+    title: "Mayday — Interior Attack",
+    category: "residential",
+    categoryLabel: "RESIDENTIAL",
+    difficulty: "extreme",
+    icon: "🆘",
+    bgColor: "#1a0000",
+    dispatch: "<span class='callsign'>MAYDAY DECLARED:</span> Engine 5 crew — interior attack team — reports disorientation on 3rd floor of apartment complex. Fire is advancing. Their radio transmits: 'MAYDAY MAYDAY MAYDAY, Engine 5 crew, third floor, we've lost our hose line, low air.' You are IC.",
+    arrival: "You are the Incident Commander outside. Engine 5's crew of two is lost on the 3rd floor. Fire has advanced from apartment 312. Two other companies are operating. RIT (Rapid Intervention Team) has not yet been formally activated.",
+    cues: [
+      { text: "Mayday declared — all other priorities STOP", correct: true },
+      { text: "RIT must be activated immediately", correct: true },
+      { text: "Lost hose line = navigation reference gone", correct: true },
+      { text: "Low air = approximately 10–15 minutes of SCBA left", correct: true },
+      { text: "Fire advancing = environment deteriorating", correct: true },
+      { text: "Other two companies may need to support RIT or continue attack", correct: true },
+      { text: "The apartment complex is brick construction", correct: false },
+      { text: "Engine 5 crew has been interior for 14 minutes", correct: false }
+    ],
+    patternOptions: [
+      "Send all interior companies to locate Engine 5 immediately.",
+      "Activate RIT. Maintain radio communication with Engine 5. Direct them to activate PASS and find a window. Other companies hold fire advance. RIT enters. Do not send in everyone.",
+      "Declare defensive operations and withdraw all interior crews.",
+      "Wait for Engine 5 to self-rescue before escalating."
+    ],
+    correctPattern: 1,
+    mentalSimHint: "If you send all interior crews to search, who is controlling the fire? If fire advances unchecked, the rescue environment becomes unsurvivable. What does RIT activation accomplish versus a freelance crew rescue?",
+    expectancyViolation: "If PASS device activates — that's your GPS. Get RIT there NOW. Every second is a survival second.",
+    actions: [
+      { text: "Activate RIT formally. Get Engine 5 talking. Direct them: activate PASS device, get to a window or wall and follow it. Hold other companies on fire attack to slow fire advance. RIT enters from known safe entry point.", score: 99, cueScore: 98, simScore: 99, feedback: "This is the hardest decision in the fire service — not sending everyone to save your crew. Mayday management is a parallel problem: you're protecting the rescue environment (hold the fire) while enabling the rescue (RIT activation + communication). You used PASS device, wall-following navigation, and window location as tools. This is the response of a fire officer who has studied Mayday survival." },
+      { text: "Send all interior companies to find Engine 5.", score: 25, cueScore: 20, simScore: 22, feedback: "Now you have potentially 6+ firefighters disoriented in a deteriorating environment instead of 2. The rescue environment becomes unsurvivable for everyone. RIT exists precisely to prevent this." },
+      { text: "Go defensive immediately, withdraw all.", score: 42, cueScore: 45, simScore: 38, feedback: "Engine 5 is still alive and inside. You do not abandon a Mayday crew without exhausting RIT. Defensive may come — but only after RIT has made entry, accounted for the crew, and been given a fair attempt." },
+      { text: "Wait for Engine 5 to self-rescue.", score: 8, cueScore: 10, simScore: 8, feedback: "Low air, lost hose line, advancing fire, disoriented. Engine 5 cannot self-rescue alone. Every second you wait is a second of SCBA air they don't have. RIT activation is an immediate mandatory response to a Mayday." }
+    ]
+  },
+
+  /* ─── 10. TRENCH RESCUE ─── */
+  {
+    id: 10,
+    title: "The Utility Trench Collapse",
+    category: "special",
+    categoryLabel: "SPECIAL OPS",
+    difficulty: "extreme",
+    icon: "⛏️",
+    bgColor: "#1a1005",
+    dispatch: "<span class='callsign'>DISPATCH → ENGINE 3, HEAVY RESCUE, BC-1:</span> Trench collapse, construction site, 5th and Main. One victim reported buried to waist in a utility trench. Coworkers attempting to dig victim out by hand.",
+    arrival: "Active construction site. Trench is approximately 8 feet deep, 4 feet wide, 40 feet long. One male victim, 30s, buried from waist down in a soil and gravel collapse. Coworkers digging frantically with shovels. No shoring visible anywhere. Trench walls show no bracing. Soil looks saturated from recent rain. Secondary collapse imminent.",
+    cues: [
+      { text: "Saturated soil = highly unstable trench walls, secondary collapse likely", correct: true },
+      { text: "Coworkers digging with shovels = vibration causing more collapse", correct: true },
+      { text: "8-foot-deep trench = any collapse will be fatal", correct: true },
+      { text: "Victim is conscious — life-safety rescue is possible", correct: true },
+      { text: "No shoring = no safe entry for rescuers", correct: true },
+      { text: "Coworkers are secondary victims in waiting if they enter", correct: true },
+      { text: "Site has a construction trailer visible", correct: false },
+      { text: "There are multiple pieces of equipment nearby", correct: false }
+    ],
+    patternOptions: [
+      "Entry to assess victim's injuries immediately.",
+      "STOP all digging. Clear coworkers from trench. Establish exclusion zone. Trench rescue specialists called. Shore before entry. Monitor victim continuously. Airway assessment via voice.",
+      "Have coworkers continue digging — they're faster and it's urgent.",
+      "Use backhoe to quickly remove soil from around victim."
+    ],
+    correctPattern: 1,
+    mentalSimHint: "If the trench wall collapses again with a rescuer inside, what is the outcome? Is there a scenario where entry without shoring saves the victim and doesn't kill a rescuer? Run that simulation fully.",
+    expectancyViolation: "If you see ANY movement in the trench walls — immediate evacuation of all personnel from within 25 feet. Do not hesitate.",
+    actions: [
+      { text: "STOP all digging immediately. Clear coworkers. 25-foot exclusion zone. Trench rescue team en route. Begin shoring system setup. Voice contact with victim — assess airway, reassure. No rescuer entry without shoring complete.", score: 97, cueScore: 96, simScore: 96, feedback: "The counterintuitive trench rescue decision: stop helping to start actually helping. Every shovel vibration was collapsing the wall further. Your RPD correctly fired the 'trench rescue protocol' pattern — shore first, entry second, always. The exclusion zone protects coworkers from becoming secondary victims. Voice contact keeps the patient's mental state stable while you build the rescue environment. This is command maturity." },
+      { text: "Enter immediately to assess victim.", score: 15, cueScore: 10, simScore: 12, feedback: "Unshorn 8-foot trench with saturated walls will kill a rescuer. The victim is alive. You will not be if the wall collapses. Shore first. This is non-negotiable." },
+      { text: "Let coworkers keep digging.", score: 8, cueScore: 5, simScore: 6, feedback: "Every shovel in the ground creates vibration that accelerates collapse. Coworkers with shovels in a saturated trench are creating a secondary collapse in real time. Stop them immediately." },
+      { text: "Use backhoe to remove soil.", score: 12, cueScore: 10, simScore: 10, feedback: "Backhoe vibration near an unshorn trench is catastrophic. The victim would be crushed, not rescued, by any mechanical excavation." }
+    ]
+  },
+
+  /* ─── 11. VEHICLE MCI ─── */
+  {
+    id: 11,
+    title: "The Highway Pile-Up",
+    category: "mci",
+    categoryLabel: "MASS CASUALTY",
+    difficulty: "standard",
+    icon: "🚗",
+    bgColor: "#15050a",
+    dispatch: "<span class='callsign'>DISPATCH → ENGINE 6, ENGINE 9, RESCUE 1, MED 3, MED 8:</span> Multi-vehicle accident, Interstate 70 westbound. Semi-truck involved, 14 civilian vehicles. Multiple injuries. Highway patrol requesting fire/EMS. Fog conditions.",
+    arrival: "Dense fog. 14-car pile-up. Semi has jackknifed blocking all lanes. Active leaking fluid — unknown (could be diesel, hydraulic, or cargo). At least 4 obvious critical victims. Multiple walk-up patients approaching you immediately. Traffic is slowing but still moving on shoulder.",
+    cues: [
+      { text: "Fog = visibility hazard for responders from approaching traffic", correct: true },
+      { text: "Walking patients approaching = mobile patients available as helpers", correct: true },
+      { text: "Unknown fluid leak = potential fire or hazmat", correct: true },
+      { text: "Active traffic on shoulder = secondary strike risk for all responders", correct: true },
+      { text: "At least 4 critical + unknown walking wounded = MCI criteria met", correct: true },
+      { text: "Jackknifed semi = traffic control priority for safety", correct: true },
+      { text: "It is foggy", correct: false },
+      { text: "The semi is a large vehicle", correct: false }
+    ],
+    patternOptions: [
+      "Begin treating the 4 critical patients immediately.",
+      "Establish scene safety: Traffic control, hazmat assessment, IC established, START triage, walking patients redirected as helpers.",
+      "Move all vehicles off the road before treating patients.",
+      "Wait for more units before approaching — scene is unsafe."
+    ],
+    correctPattern: 1,
+    mentalSimHint: "A firefighter bent over a patient gets struck by a vehicle in the fog. Now you have a fifth critical patient and one fewer responder. What was the first thing you should have done?",
+    expectancyViolation: "Unknown fluid + ignition source (sparks, cigarettes) = fire risk. If you smell fuel or see vapor — get everyone upwind and 300 feet back immediately.",
+    actions: [
+      { text: "Scene safety first: get PD stopping traffic. Assess the fluid leak from upwind. Establish IC. Walking wounded directed to a safe zone — recruit best one as triage assistant. START triage on all non-ambulatory victims.", score: 94, cueScore: 93, simScore: 92, feedback: "Secondary strikes kill responders every year. Your first move — safety — was right. Walking patients are a resource: one calm, coherent bystander is worth two of your crews in an MCI. Recruiting them as triage assistants multiplies your effectiveness. You also correctly flagged the unknown fluid before applying any water or approaching with ignition sources." },
+      { text: "Treat the 4 critical patients first.", score: 32, cueScore: 30, simScore: 28, feedback: "Treating critical patients in active traffic lanes in fog gets you killed. The scene isn't safe. Your first casualty at an MCI should never be a firefighter." },
+      { text: "Clear all vehicles before treatment.", score: 22, cueScore: 25, simScore: 20, feedback: "Clearing 14 vehicles takes 30–45 minutes. Critical patients die. Scene safety is about establishing safe zones, not moving every car." },
+      { text: "Stage and await more units.", score: 28, cueScore: 30, simScore: 25, feedback: "Walking wounded are bleeding, critical patients are dying, and traffic is still moving. Stage nothing — establish safety and begin parallel operations immediately." }
+    ]
+  },
+
+  /* ─── 12. GARAGE FIRE / REKINDLE ─── */
+  {
+    id: 12,
+    title: "The Rekindle at 0300",
+    category: "residential",
+    categoryLabel: "RESIDENTIAL",
+    difficulty: "basic",
+    icon: "🔁",
+    bgColor: "#1a0d00",
+    dispatch: "<span class='callsign'>DISPATCH → ENGINE 2:</span> Rekindle at 8802 Thornbury Drive. Previous fire from 6 hours ago. Neighbor reports smoke from detached garage. 0300 hours.",
+    arrival: "Same address from a garage fire earlier in the shift. Unit that handled the original call completed overhaul. Light smoke visible from garage. Garage contains a newer model vehicle (hybrid/EV?), workbench, stored paint cans and chemicals.",
+    cues: [
+      { text: "Possible EV or hybrid in garage — lithium battery fire risk", correct: true },
+      { text: "Light smoke may indicate incomplete overhaul from prior call", correct: true },
+      { text: "Stored paint and chemicals — accelerant potential", correct: true },
+      { text: "Rekindle = previous overhaul was insufficient", correct: true },
+      { text: "Garage structure — check for prior thermal damage before entry", correct: true },
+      { text: "0300 hours — potential occupants asleep in adjacent house", correct: true },
+      { text: "Address is familiar from earlier", correct: false },
+      { text: "Neighbor made the call", correct: false }
+    ],
+    patternOptions: [
+      "Aggressive interior attack same as original fire.",
+      "EV assessment, thermal imaging before entry, check structural integrity, prepare for extended suppression if lithium battery.",
+      "Exterior water only — chemicals and possible EV mean no entry.",
+      "Wake the occupants and let them assess their own vehicle."
+    ],
+    correctPattern: 1,
+    mentalSimHint: "Lithium-ion battery fire: if you douse it and walk away, what's the thermal runaway risk over the next 6 hours? What do you tell the occupants? Does this vehicle go to a salvage lot?",
+    expectancyViolation: "If you smell an acrid, sweet chemical odor or see smoke with an unusual color — this is a battery fire. Do not apply CO2 or Halon. Large quantities of water only, and get everyone back.",
+    actions: [
+      { text: "FLIR sweep of the vehicle before entry. Check structural integrity of garage. If EV confirmed, treat as extended-duration battery suppression: large water volume, maintain for 30+ minutes, advise occupants of rekindle risk, document for towing to salvage.", score: 95, cueScore: 93, simScore: 94, feedback: "EV fires require different thinking — thermal imaging isn't just for fire location, it's for battery cell temperature monitoring. You correctly identified that an incomplete overhaul + potential lithium battery = a multi-hour operation. Documenting and advising the occupant protects them and your department from liability. The 'suppress and walk away' protocol does not apply to EVs." },
+      { text: "Aggressive interior attack same as original fire.", score: 40, cueScore: 35, simScore: 38, feedback: "Without FLIR assessment and structural check on a fire-damaged structure, you're entering a compromised building toward an unknown fire source. And if that's a lithium battery — aggressive attack doesn't work the way you're thinking." },
+      { text: "Exterior water only.", score: 55, cueScore: 58, simScore: 52, feedback: "Reasonable caution, but exterior water alone on a rekindle won't eliminate the ember source inside. You need FLIR assessment and targeted overhaul of the original fire area." },
+      { text: "Let occupants assess their own vehicle.", score: 5, cueScore: 5, simScore: 5, feedback: "Never. You are responsible for the scene until it is properly extinguished and released. A civilian touching a potentially rekindling EV is a life-safety risk." }
+    ]
+  }
+];
+
+/* ================================================================
+   QUICK DRILL QUESTIONS
+================================================================ */
+const DRILL_QUESTIONS = [
+  { q: "Black, pressurized smoke pushing from a commercial building at night. What's your first read?", answers: ["Defensive — possible post-flashover", "Aggressive interior push", "Wait for hazmat clearance", "Vent the roof first"], correct: 0 },
+  { q: "You hear 'MAYDAY' on the radio. What is your FIRST action as IC?", answers: ["Send all crews to search", "Activate RIT team", "Go defensive immediately", "Call for more resources"], correct: 1 },
+  { q: "Ventilation-limited fire: windows intact, gray smoke pushing from eaves. Door opens. What happens?", answers: ["Fire shrinks from fresh air", "Nothing changes", "Rapid transition to flashover is possible", "Smoke gets lighter"], correct: 2 },
+  { q: "START triage — a victim is breathing at 28/min, radial pulse absent, no following commands. Tag?", answers: ["Black (expectant)", "Yellow (delayed)", "Red (immediate)", "Green (minor)"], correct: 2 },
+  { q: "Stack effect in a high-rise in winter. Smoke is most likely to travel:", answers: ["Down toward lobby", "Straight out windows", "Up and into upper floors", "Horizontally"], correct: 2 },
+  { q: "Trench rescue: 8-foot deep, saturated soil, victim buried at waist. Coworkers are digging. Your FIRST action?", answers: ["Entry to assess victim", "Stop all digging, clear area", "Continue digging faster", "Call for backhoe"], correct: 1 },
+  { q: "EV (electric vehicle) fire: you apply water and smoke stops. Do you leave?", answers: ["Yes, fire is out", "No — thermal runaway risk remains hours later", "Only if the battery light is off", "After 5 minutes of monitoring"], correct: 1 },
+  { q: "LCES stands for:", answers: ["Location, Communication, Entry, Strategy", "Lookouts, Communications, Escape Routes, Safety Zones", "Ladder, Command, Egress, Suppression", "Leadership, Crew, Escape, Safety"], correct: 1 },
+  { q: "Klein's RPD model: Experts make decisions by:", answers: ["Comparing all options systematically", "Following checklists first", "Recognizing a pattern and mentally simulating the first workable option", "Voting with crew members"], correct: 2 },
+  { q: "Heavy black smoke + roof compromise + roll-up steel doors locked. What pattern?", answers: ["Aggressive offensive", "Transitional attack", "Defensive — protect exposures", "Vertical ventilation first"], correct: 2 },
+  { q: "Mammalian dive reflex in cold-water submersion gives victims approximately:", answers: ["2–3 minutes", "5–10 minutes", "Potentially 20+ minutes at very cold temperatures", "No additional time"], correct: 2 },
+  { q: "In an MCI, you treat the first critical victim you see. This is:", answers: ["Correct — life is the priority", "A common critical error — triage first", "Only wrong if more units are available", "Correct if they are red-tagged"], correct: 1 }
+];
+
+/* ================================================================
+   BADGES DEFINITION
+================================================================ */
+const BADGES_DEF = [
+  { id: "first_blood", name: "First Blood", icon: "🔥", desc: "Complete your first scenario", condition: s => s.sessions >= 1 },
+  { id: "cue_master", name: "Cue Master", icon: "👁️", desc: "Score 90%+ on cue recognition in 5 sessions", condition: s => s.sessions >= 5 && s.avgCueScore >= 90 },
+  { id: "mental_sim", name: "Mental Simulator", icon: "🧠", desc: "Complete 10 scenarios with a mental sim entry", condition: s => s.sessionsWithSim >= 10 },
+  { id: "decision_speed", name: "Speed of Fire", icon: "⚡", desc: "Complete a scenario in under 90 seconds", condition: s => s.fastestSession !== null && s.fastestSession < 90 },
+  { id: "streak_7", name: "7-Day Streak", icon: "📅", desc: "Train 7 days in a row", condition: s => s.streak >= 7 },
+  { id: "streak_30", name: "Iron Routine", icon: "🗓️", desc: "Train 30 days in a row", condition: s => s.streak >= 30 },
+  { id: "perfect_100", name: "Perfect Score", icon: "💯", desc: "Score 100 on any scenario", condition: s => s.perfectScores >= 1 },
+  { id: "mayday_mgr", name: "Mayday Manager", icon: "🆘", desc: "Score 90%+ on the Mayday scenario", condition: s => (s.topScoresByScenario[9] || 0) >= 90 },
+  { id: "bc_ready", name: "Battalion Chief Ready", icon: "⭐", desc: "Average score above 85% across 20+ sessions", condition: s => s.sessions >= 20 && s.avgScore >= 85 },
+  { id: "hazmat_ace", name: "Hazmat Ace", icon: "☣️", desc: "Score 90%+ on the Hazmat scenario", condition: s => (s.topScoresByScenario[5] || 0) >= 90 },
+  { id: "all_types", name: "Well-Rounded", icon: "🎯", desc: "Complete at least one scenario from every category", condition: s => s.categoriesCompleted >= 6 },
+  { id: "crew_leader", name: "Crew Leader", icon: "👥", desc: "Run a Crew Mode session", condition: s => s.crewSessions >= 1 },
+  { id: "historian", name: "Historian", icon: "📖", desc: "Log 5 real incidents in the Incident Logger", condition: s => s.loggedIncidents >= 5 },
+  { id: "promotion_track", name: "Promotion Track", icon: "🏆", desc: "Complete 40+ sessions with 80%+ average", condition: s => s.sessions >= 40 && s.avgScore >= 80 }
+];
+
+/* ================================================================
+   EXPERT LIBRARY CONTENT
+================================================================ */
+const LIBRARY_SECTIONS = [
+  {
+    title: "Klein's Recognition-Primed Decision Model",
+    icon: "🧠",
+    iconBg: "rgba(41,128,185,0.2)",
+    content: `
+      <p>Gary Klein studied firefighters, military commanders, and chess masters to understand how experts make decisions under pressure. His finding: experts don't analyze — they recognize.</p>
+      <h4>The RPD Process</h4>
+      <ul>
+        <li><strong>Pattern Recognition:</strong> You see the scene and your brain immediately says "this is like the time..." — matching to thousands of stored prototypes from experience.</li>
+        <li><strong>Mental Simulation:</strong> You run a rapid internal "what if" — imagining the first workable course of action through to its end.</li>
+        <li><strong>Course Correction:</strong> If the simulation reveals a problem, you tweak the action or move to the next option. You never compare all options — you evaluate one at a time.</li>
+        <li><strong>Action:</strong> You commit and act, with ongoing monitoring for expectancy violations.</li>
+      </ul>
+      <h4>Why This Matters for Promotion</h4>
+      <p>Oral boards test your ability to narrate this process. A promotion candidate who can say "I recognized this as a ventilation-limited fire because X, Y, Z cues matched my mental prototype, and my simulation told me door control was critical before water" demonstrates fireground intelligence at the Battalion Chief level.</p>
+    `
+  },
+  {
+    title: "Smoke Reading: The Language of Fire",
+    icon: "💨",
+    iconBg: "rgba(192,57,43,0.2)",
+    content: `
+      <h4>Volume</h4>
+      <ul>
+        <li><strong>High volume:</strong> Lots of fuel, well-established fire</li>
+        <li><strong>Low volume:</strong> Early fire, or fire is near the smoke you're seeing</li>
+      </ul>
+      <h4>Velocity</h4>
+      <ul>
+        <li><strong>Pushing hard under pressure:</strong> High heat, possible post-flashover</li>
+        <li><strong>Lazy drift:</strong> Early fire or ventilation-limited</li>
+      </ul>
+      <h4>Density</h4>
+      <ul>
+        <li><strong>Heavy, opaque:</strong> High carbon content, petroleum products, or large fire load</li>
+        <li><strong>Light, wispy:</strong> Smoldering, low temperature fire</li>
+      </ul>
+      <h4>Color</h4>
+      <ul>
+        <li><strong>Black:</strong> Petroleum-based fuels, unburned carbon — dangerous, toxic</li>
+        <li><strong>Gray:</strong> Mixed fuel, transitional state — watch it closely</li>
+        <li><strong>White/light gray:</strong> Steam or early fuel involvement</li>
+        <li><strong>Yellow-brown:</strong> Ventilation-limited, oxygen-deprived — extreme care</li>
+      </ul>
+      <h4>The Ventilation-Limited Signature</h4>
+      <p>Gray smoke pushing from eaves and around window frames with intact glass = ventilation-limited fire. Opening a door or window rapidly changes the fire dynamic. Flow path management is critical.</p>
+    `
+  },
+  {
+    title: "Construction Types & Firefighter Safety",
+    icon: "🏗️",
+    iconBg: "rgba(243,156,18,0.2)",
+    content: `
+      <h4>Type I — Fire Resistive</h4>
+      <p>High-rise construction. Concrete and steel. Very resistant to structural failure but lateral flame spread in HVAC and through penetrations is the concern.</p>
+      <h4>Type II — Non-Combustible</h4>
+      <p>Steel frames, metal roofs. Steel fails at 1100°F — rapid structural failure under fire conditions. Unprotected steel roof assemblies are extremely hazardous.</p>
+      <h4>Type III — Ordinary (Brick/Joist)</h4>
+      <p>Masonry walls, wood interior. The "taxpayer" strip mall. Roof failure risk is high — heavy roof systems over open interiors. Interior collapse is a major concern.</p>
+      <h4>Type IV — Heavy Timber</h4>
+      <p>Large wood members. Burns slowly but intensely. Warning: charring without visible flame can mask massive heat content. Failure is sudden when it comes.</p>
+      <h4>Type V — Wood Frame</h4>
+      <p>Most residential. Burns fast, fails fast. Modern lightweight truss construction (post-1980) fails in 5–7 minutes of fire contact. Platform frame = floor by floor collapse. Balloon frame = void spaces throughout entire height.</p>
+    `
+  },
+  {
+    title: "LCES — Wildland Safety Fundamentals",
+    icon: "🌲",
+    iconBg: "rgba(39,174,96,0.2)",
+    content: `
+      <p>LCES is the non-negotiable survival system for any wildland or WUI assignment.</p>
+      <h4>Lookouts</h4>
+      <p>Posted at high vantage points with direct radio communication to all crews. Their job is continuous monitoring of fire behavior and immediate warning.</p>
+      <h4>Communications</h4>
+      <p>Established radio channels, tested before entering the fire area. Cell phones are supplemental only — never primary.</p>
+      <h4>Escape Routes</h4>
+      <p>Two escape routes identified before work begins. Routes should be clear, tested, and wide enough for apparatus. Revisit every time the fire behavior changes.</p>
+      <h4>Safety Zones</h4>
+      <p>An area large enough to protect all personnel from direct flame impingement. The rule of thumb: safety zone should be at least 4x the height of the surrounding fuel. A pre-burned area, paved parking lot, or large body of water.</p>
+      <h4>Trigger Points</h4>
+      <p>Define in advance: "If the fire crosses this road, we go to safety zone A." Trigger points prevent decision paralysis during rapid fire spread.</p>
+    `
+  },
+  {
+    title: "Expectancy Violations — Staying Adaptive",
+    icon: "⚠️",
+    iconBg: "rgba(231,76,60,0.2)",
+    content: `
+      <p>One of Klein's most important concepts: expert decision makers are constantly monitoring for things that DON'T match their expectations. This is the survival skill.</p>
+      <h4>What Is an Expectancy Violation?</h4>
+      <p>You expected X to happen. Y happened instead. If you continue acting on the X assumption, you're in danger.</p>
+      <h4>Examples in the Fireground</h4>
+      <ul>
+        <li>You expected interior conditions to improve after a line was charged — instead, smoke volume increased. Reassess.</li>
+        <li>You expected the roof to hold — you hear a low creak or groan. Get out.</li>
+        <li>You expected hazmat product was non-reactive with water — symptoms in responders appear. Stop. Back off.</li>
+        <li>You expected the victim to be in the bedroom — PASS device is sounding from the opposite end of the structure.</li>
+      </ul>
+      <h4>The Expert Response</h4>
+      <p>Experts don't ignore anomalies — they notice them immediately and treat them as high-priority signals. The internal monologue of a great firefighter: "That's not what I expected. Something changed. What am I missing?"</p>
+    `
+  },
+  {
+    title: "Promotion Board: Using RPD in Oral Interviews",
+    icon: "🏆",
+    iconBg: "rgba(241,196,15,0.2)",
+    content: `
+      <p>The promotion board is your opportunity to demonstrate that you think like a Battalion Chief — not just act like one.</p>
+      <h4>The Framework Answer</h4>
+      <p>When given a fireground scenario in an oral board, structure your answer around the RPD process:</p>
+      <ul>
+        <li><strong>Cue Recognition:</strong> "On arrival, I observed X, Y, and Z. These cues told me..."</li>
+        <li><strong>Pattern Match:</strong> "This matches the pattern of a [ventilation-limited / post-flashover / defensive] scenario because..."</li>
+        <li><strong>Mental Simulation:</strong> "My first workable action was X. Running that simulation forward, I anticipated..."</li>
+        <li><strong>Action:</strong> "I committed to the following assignments..."</li>
+        <li><strong>Monitoring:</strong> "I continued to watch for [expectancy violations] including..."</li>
+      </ul>
+      <h4>What They're Looking For</h4>
+      <p>They want to see that you can read a scene, form a plan, and adapt. They are NOT looking for the textbook answer — they're looking for your reasoning process. Confidence + humility + situational awareness = the promotion.</p>
+    `
+  }
+];
+
+/* ================================================================
+   APP STATE
+================================================================ */
+let state = JSON.parse(localStorage.getItem('ciState') || '{}');
+state = Object.assign({
+  sessions: 0,
+  avgScore: 0,
+  avgCueScore: 0,
+  streak: 0,
+  lastTrainingDate: null,
+  history: [],
+  topScoresByScenario: {},
+  perfectScores: 0,
+  fastestSession: null,
+  sessionsWithSim: 0,
+  crewSessions: 0,
+  loggedIncidents: 0,
+  categoriesCompleted: 0,
+  completedCategories: [],
+  incidents: [],
+  crewLeaderboard: []
+}, state);
+
+let activeScenario = null;
+let activeStep = 0;
+let selectedCues = new Set();
+let selectedPattern = -1;
+let sessionStartTime = null;
+let timerInterval = null;
+let modalTimerInterval = null;
+let modalElapsed = 0;
+const STEPS = ['dispatch','arrival','cues','pattern','sim','action','results'];
+
+/* ================================================================
+   SAVE / PERSIST
+================================================================ */
+function saveState() {
+  localStorage.setItem('ciState', JSON.stringify(state));
+  // Auto-backup: write to file handle if one is active (no-op if not)
+  _autoBackupWrite();
 }
 
-function calculateTeamProgress(athletes) {
-  if (athletes.length === 0) return { avgScore: "0.0", strongPercent: 0, totalAthletes: 0 };
-  let totalScore = 0, totalStrong = 0;
-  const totalVirtues = athletes.length * 7;
+/* ================================================================
+   NAVIGATION
+================================================================ */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const tabs = document.querySelectorAll('.nav-tab');
+  const pages = ['dashboard','scenarios','history','crew','logger','library','badges'];
+  const idx = pages.indexOf(id);
+  if (idx >= 0) tabs[idx].classList.add('active');
 
-  athletes.forEach(a => {
-    const scores = Object.values(a.scores || {});
-    totalScore += scores.reduce((a,b) => a + b, 0);
-    totalStrong += scores.filter(v => v === 3).length;
+  // Scroll to top on page change
+  window.scrollTo(0, 0);
+
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'scenarios') renderScenarios('all');
+  if (id === 'history') renderHistory();
+  if (id === 'library') renderLibrary();
+  if (id === 'badges') renderBadges();
+  if (id === 'logger') renderLoggedIncidents();
+  if (id === 'crew') renderCrewLeaderboard();
+}
+
+// Sync bottom nav active state
+function setActiveBottomNav(id) {
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('bnav-' + id);
+  if (btn) btn.classList.add('active');
+}
+
+/* ================================================================
+   DASHBOARD
+================================================================ */
+const RANKS = [
+  { name: "PROBATIONARY FF", min: 0,  stars: 1 },
+  { name: "FIREFIGHTER",     min: 20, stars: 2 },
+  { name: "SENIOR FF",       min: 40, stars: 2 },
+  { name: "DRIVER/ENGINEER", min: 55, stars: 3 },
+  { name: "LIEUTENANT",      min: 65, stars: 3 },
+  { name: "ENGINE CAPTAIN",  min: 72, stars: 4 },
+  { name: "BATTALION CHIEF", min: 82, stars: 4 },
+  { name: "COMMAND MASTER",  min: 93, stars: 5 }
+];
+
+function getRank(avg) {
+  let rank = RANKS[0];
+  for (const r of RANKS) { if (avg >= r.min) rank = r; }
+  return rank;
+}
+
+function renderDashboard() {
+  const avg = state.avgScore || 0;
+  const rank = getRank(avg);
+  document.getElementById('dash-rank').textContent = rank.name;
+  document.getElementById('dash-stars').textContent = '★'.repeat(rank.stars) + '☆'.repeat(5 - rank.stars);
+  document.getElementById('dash-progbar').style.width = avg + '%';
+  document.getElementById('dash-mastery-pct').textContent = Math.round(avg) + '% RPD Mastery • ' + state.sessions + ' sessions';
+  document.getElementById('stat-sessions').textContent = state.sessions;
+  document.getElementById('stat-avg').textContent = state.sessions ? Math.round(avg) + '%' : '—';
+  document.getElementById('stat-streak').textContent = state.streak;
+  document.getElementById('stat-best').textContent = state.sessions ? Math.round(Math.max(...state.history.map(h => h.score || 0))) + '%' : '—';
+  document.getElementById('nav-streak').textContent = state.streak;
+
+  // Daily challenge
+  const daily = SCENARIOS[new Date().getDay() % SCENARIOS.length];
+  document.getElementById('daily-title').textContent = daily.title;
+  document.getElementById('daily-desc').textContent = daily.categoryLabel + ' • ' + daily.difficulty.toUpperCase();
+
+  // Recent sessions
+  const rec = document.getElementById('dash-recent');
+  if (!state.history.length) {
+    rec.innerHTML = '<div style="color:var(--ash); font-size:13px; padding:10px 0;">No sessions yet. Go train!</div>';
+    return;
+  }
+  rec.innerHTML = state.history.slice(0, 5).map(h => {
+    const sc = scoreClass(h.score);
+    return `<div class="activity-row">
+      <div class="activity-icon">${h.icon || '🔥'}</div>
+      <div>
+        <div class="activity-title">${h.title}</div>
+        <div class="activity-meta">${h.date}</div>
+      </div>
+      <div class="activity-score ${sc}">${h.score}%</div>
+    </div>`;
+  }).join('');
+}
+
+function startDailyChallenge() {
+  const daily = SCENARIOS[new Date().getDay() % SCENARIOS.length];
+  showPage('scenarios');
+  setTimeout(() => openModal(daily.id), 200);
+}
+
+function scoreClass(s) {
+  if (s >= 90) return 'score-excellent';
+  if (s >= 75) return 'score-good';
+  if (s >= 55) return 'score-fair';
+  return 'score-poor';
+}
+
+/* ================================================================
+   SCENARIOS GRID
+================================================================ */
+function renderScenarios(cat) {
+  const grid = document.getElementById('scenario-grid');
+  const list = cat === 'all' ? SCENARIOS : SCENARIOS.filter(s => s.category === cat);
+  grid.innerHTML = list.map(sc => {
+    const best = state.topScoresByScenario[sc.id];
+    const diffMap = { basic: 'diff-basic', standard: 'diff-standard', advanced: 'diff-advanced', extreme: 'diff-extreme' };
+    return `<div class="scenario-card" onclick="openModal(${sc.id})">
+      <div class="scenario-thumb" style="background:${sc.bgColor}">
+        <span class="scenario-thumb-icon" style="font-size:52px;">${sc.icon}</span>
+        <div class="scenario-diff ${diffMap[sc.difficulty] || 'diff-standard'}">${sc.difficulty.toUpperCase()}</div>
+      </div>
+      <div class="scenario-body">
+        <div class="scenario-cat">${sc.categoryLabel}</div>
+        <div class="scenario-title">${sc.title}</div>
+        <div class="scenario-desc">${sc.dispatch.replace(/<[^>]*>/g, '').substring(0, 80)}...</div>
+      </div>
+      <div class="scenario-footer">
+        <span>${STEPS.length - 1} steps</span>
+        <span class="scenario-best">${best !== undefined ? 'BEST: ' + best + '%' : 'NOT PLAYED'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterScenarios(cat, btn) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  renderScenarios(cat);
+}
+
+/* ================================================================
+   MODAL / SCENARIO PLAYER
+================================================================ */
+function openModal(id) {
+  activeScenario = SCENARIOS.find(s => s.id === id);
+  if (!activeScenario) return;
+  activeStep = 0;
+  selectedCues = new Set();
+  selectedPattern = -1;
+  modalElapsed = 0;
+  sessionStartTime = Date.now();
+  document.getElementById('modal-cat').textContent = activeScenario.categoryLabel;
+  document.getElementById('modal-scenario-title').textContent = activeScenario.title;
+  document.getElementById('modal-overlay').classList.add('open');
+  updateStepBar();
+  startModalTimer();
+  renderModalStep();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  clearInterval(modalTimerInterval);
+  activeScenario = null;
+}
+
+function updateStepBar() {
+  const bar = document.getElementById('modal-step-bar');
+  bar.innerHTML = STEPS.map((s, i) => {
+    let cls = 'step-pip';
+    if (i < activeStep) cls += ' done';
+    else if (i === activeStep) cls += ' active';
+    return `<div class="${cls}" title="${s}"></div>`;
+  }).join('');
+  document.getElementById('modal-step-label').textContent = STEPS[activeStep].toUpperCase();
+}
+
+function startModalTimer() {
+  clearInterval(modalTimerInterval);
+  const totalSecs = 240; // 4-minute scene clock
+  const circ = document.getElementById('timer-circle');
+  const circumference = 94.2;
+  modalTimerInterval = setInterval(() => {
+    modalElapsed++;
+    const mins = Math.floor(modalElapsed / 60);
+    const secs = modalElapsed % 60;
+    document.getElementById('timer-display').textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+    const offset = circumference * (1 - Math.min(modalElapsed / totalSecs, 1));
+    circ.style.strokeDashoffset = offset;
+    if (modalElapsed >= totalSecs) {
+      circ.style.stroke = 'var(--danger)';
+    }
+  }, 1000);
+}
+
+function renderModalStep() {
+  const body = document.getElementById('modal-body');
+  updateStepBar();
+
+  if (activeStep === 0) {
+    // DISPATCH
+    body.innerHTML = `
+      <div class="step-heading">Dispatch Received</div>
+      <div class="step-sub">Read the dispatch. Form your initial situational awareness before arrival.</div>
+      <div class="dispatch-block">${activeScenario.dispatch}</div>
+      <div style="background:var(--smoke-700); border-radius:10px; padding:14px; font-size:13px; color:var(--chalk); margin-bottom:20px;">
+        <i class="fas fa-brain text-amber" style="margin-right:8px;"></i>
+        <strong>Pre-arrival size-up:</strong> What type of incident is this? What resources do you need? What's your initial plan?
+      </div>
+      <button class="modal-btn modal-btn-primary" onclick="nextStep()">
+        <i class="fas fa-siren-on"></i> ARRIVING ON SCENE →
+      </button>`;
+
+  } else if (activeStep === 1) {
+    // ARRIVAL / SCENE
+    body.innerHTML = `
+      <div class="step-heading">On Scene — Size-Up</div>
+      <div class="step-sub">Take in everything. What do you see, hear, and smell?</div>
+      <div style="background:var(--smoke-700); border:1px solid var(--smoke-500); border-radius:10px; padding:20px; font-size:14px; line-height:1.8; margin-bottom:20px; color:var(--chalk);">
+        ${activeScenario.arrival}
+      </div>
+      <div class="dispatch-block" style="border-color:var(--fire-amber); margin-bottom:20px;">
+        <strong style="color:var(--fire-amber);">MENTAL SIM PROMPT:</strong><br>
+        ${activeScenario.mentalSimHint}
+      </div>
+      <button class="modal-btn modal-btn-primary" onclick="nextStep()">
+        <i class="fas fa-search"></i> BEGIN CUE RECOGNITION →
+      </button>`;
+
+  } else if (activeStep === 2) {
+    // CUE RECOGNITION
+    body.innerHTML = `
+      <div class="step-heading">Cue Recognition</div>
+      <div class="step-sub">Select every cue that is tactically relevant to your decision-making.</div>
+      <div class="cue-grid" id="cue-grid-items"></div>
+      <button class="modal-btn modal-btn-primary" onclick="lockCues()">
+        <i class="fas fa-lock"></i> LOCK IN CUES →
+      </button>`;
+    document.getElementById('cue-grid-items').innerHTML = activeScenario.cues.map((c, i) => `
+      <div class="cue-item" id="cue-${i}" onclick="toggleCue(${i})">
+        <div class="cue-check" id="cue-check-${i}">✓</div>
+        <span>${c.text}</span>
+      </div>`).join('');
+
+  } else if (activeStep === 3) {
+    // PATTERN RECOGNITION
+    body.innerHTML = `
+      <div class="step-heading">Pattern Recognition</div>
+      <div class="step-sub">Which fireground pattern does this scene most closely match?</div>
+      <div class="pattern-list">
+        ${activeScenario.patternOptions.map((p, i) => `
+          <button class="pattern-btn" id="pat-${i}" onclick="selectPattern(${i})">
+            <div class="pattern-letter">${String.fromCharCode(65 + i)}</div>
+            <span>${p}</span>
+          </button>`).join('')}
+      </div>
+      <button class="modal-btn modal-btn-primary" onclick="lockPattern()" id="lock-pattern-btn">
+        COMMIT TO PATTERN →
+      </button>`;
+
+  } else if (activeStep === 4) {
+    // MENTAL SIMULATION
+    body.innerHTML = `
+      <div class="step-heading">Mental Simulation</div>
+      <div class="step-sub">Run your mental movie. What happens next if you take your planned action?</div>
+      <button class="voice-btn" onclick="voicePlaceholder()">
+        <i class="fas fa-microphone"></i> 
+        <span>Voice-to-text (tap to activate — simulates verbal size-up for oral boards)</span>
+      </button>
+      <textarea id="mental-sim-area" placeholder="Type your mental simulation here. Consider: What do you expect to happen? What could go wrong? What's your decision point?
+
+Example: 'I expect the interior to be tenable because smoke is still gray and windows are intact. If I control the door on entry, I can limit the flow path. I anticipate finding the victim in the bedroom based on the occupant profile...'"></textarea>
+      <div class="dispatch-block" style="border-color:var(--fire-amber); margin-bottom:20px;">
+        <strong style="color:var(--fire-amber);">EXPECTANCY VIOLATION WATCH:</strong><br>
+        ${activeScenario.expectancyViolation}
+      </div>
+      <button class="modal-btn modal-btn-primary" onclick="lockSim()">
+        <i class="fas fa-bolt"></i> COMMIT TO ACTION →
+      </button>`;
+
+  } else if (activeStep === 5) {
+    // ACTION SELECTION
+    body.innerHTML = `
+      <div class="step-heading">Choose Your Action</div>
+      <div class="step-sub">This is it. Based on your size-up, cue recognition, pattern match, and mental simulation — what do you do?</div>
+      <div class="action-list">
+        ${activeScenario.actions.map((a, i) => `
+          <button class="action-btn" onclick="finishScenario(${i})">
+            <strong>Action ${String.fromCharCode(65 + i)}:</strong> ${a.text}
+          </button>`).join('')}
+      </div>`;
+
+  } else if (activeStep === 6) {
+    // HANDLED BY finishScenario
+  }
+}
+
+function nextStep() {
+  activeStep++;
+  renderModalStep();
+}
+
+function toggleCue(i) {
+  if (selectedCues.has(i)) {
+    selectedCues.delete(i);
+    document.getElementById('cue-' + i).classList.remove('selected');
+  } else {
+    selectedCues.add(i);
+    document.getElementById('cue-' + i).classList.add('selected');
+  }
+}
+
+function lockCues() {
+  activeStep++;
+  renderModalStep();
+}
+
+function selectPattern(i) {
+  selectedPattern = i;
+  document.querySelectorAll('.pattern-btn').forEach((b, idx) => {
+    b.classList.toggle('selected', idx === i);
   });
-
-  const avgScore = (totalScore / totalVirtues).toFixed(1);
-  const strongPercent = Math.round((totalStrong / totalVirtues) * 100);
-
-  return { avgScore, strongPercent, totalAthletes: athletes.length };
 }
 
-// ─── MODALS ───────────────────────────────────────────────────────────────────
-function Modal({title, onClose, children}) {
-  return (
-    <div style={{position:"fixed", inset:0, background:"rgba(0,0,0,0.75)", zIndex:500, display:"flex", alignItems:"center", justifyContent:"center"}} onClick={e=>e.target===e.currentTarget&&onClose()}>
-      <div style={{background:"#fff", borderRadius:16, width:"92%", maxWidth:720, maxHeight:"92vh", overflow:"hidden", boxShadow:"0 25px 70px rgba(0,0,0,0.25)"}}>
-        <div style={{padding:"18px 24px", borderBottom:"1px solid #dee2e6", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-          <span style={{fontSize:21, fontWeight:800, color:C.orange}}>{title}</span>
-          <button onClick={onClose} style={{fontSize:24, background:"none", border:"none", color:"#666"}}>✕</button>
-        </div>
-        <div style={{padding:24, overflowY:"auto", maxHeight:"78vh"}}>{children}</div>
-      </div>
-    </div>
-  );
+function lockPattern() {
+  if (selectedPattern < 0) {
+    alert('Select a pattern first.');
+    return;
+  }
+  activeStep++;
+  renderModalStep();
 }
 
-function ConfirmDelete({name, onConfirm, onCancel}) {
-  return (
-    <Modal title="Delete Athlete" onClose={onCancel}>
-      <p style={{fontSize:16, marginBottom:24}}>Are you sure you want to permanently delete <strong>{name}</strong>?</p>
-      <p style={{color:"#ef4444", marginBottom:24}}>This cannot be undone.</p>
-      <div style={{display:"flex", gap:12, justifyContent:"flex-end"}}>
-        <button onClick={onCancel} style={{padding:"12px 24px", border:"none", background:"#ddd", borderRadius:10}}>Cancel</button>
-        <button onClick={onConfirm} style={{padding:"12px 28px", border:"none", background:"#ef4444", color:"#fff", borderRadius:10, fontWeight:700}}>Yes, Delete</button>
-      </div>
-    </Modal>
-  );
+function lockSim() {
+  const sim = document.getElementById('mental-sim-area');
+  if (sim && sim.value.trim().length > 20) {
+    state.sessionsWithSim = (state.sessionsWithSim || 0) + 1;
+  }
+  activeStep++;
+  renderModalStep();
 }
 
-// ─── EDIT MODAL ───────────────────────────────────────────────────────────────
-function EditModal({person, onSave, onClose}) {
-  const [data, setData] = useState({...person, notes: person.notes || ""});
-
-  const updateScore = (key, value) => setData(prev => ({...prev, scores: {...prev.scores, [key]: Number(value)}}));
-
-  return (
-    <Modal title={data.id ? "Edit Athlete" : "Add New Athlete"} onClose={onClose}>
-      <input placeholder="Athlete Name *" value={data.name||""} onChange={e=>setData({...data,name:e.target.value})} style={{width:"100%", padding:14, fontSize:17, border:`2px solid ${C.border}`, borderRadius:10, marginBottom:12}} />
-      <input placeholder="Role / Team (optional)" value={data.role||""} onChange={e=>setData({...data,role:e.target.value})} style={{width:"100%", padding:14, fontSize:17, border:`2px solid ${C.border}`, borderRadius:10, marginBottom:20}} />
-
-      <div style={{marginBottom:20}}>
-        <div style={{fontWeight:700, color:C.orange, marginBottom:12}}>Score Each Virtue (0–3)</div>
-        {Object.values(VIRTUES).map(t => (
-          <div key={t.key} style={{marginBottom:16, padding:16, background:"#fff", border:`1px solid ${t.border}`, borderRadius:12}}>
-            <div style={{display:"flex", alignItems:"center", gap:12, marginBottom:8}}>
-              <span style={{fontSize:28}}>{t.icon}</span>
-              <div style={{flex:1, fontWeight:700, color:t.color}}>{t.label}</div>
-            </div>
-            <div style={{fontSize:13, color:"#555", marginBottom:10}}>{t.scoreMeaning}</div>
-            <div style={{display:"flex", gap:6}}>
-              {[0,1,2,3].map(n => (
-                <button key={n} onClick={()=>updateScore(t.key,n)} style={{flex:1, padding:"10px", borderRadius:8, background: data.scores[t.key]===n ? C.orange : "#f1f3f5", color: data.scores[t.key]===n ? "#fff" : "#333", fontWeight:700}}>
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{marginBottom:20}}>
-        <div style={{fontWeight:700, marginBottom:8}}>Notes / Observations / Prayers</div>
-        <textarea value={data.notes} onChange={e=>setData({...data, notes:e.target.value})} placeholder="Key moments, growth areas, specific prayers..." style={{width:"100%", height:130, padding:14, border:`2px solid ${C.border}`, borderRadius:10, resize:"vertical"}} />
-      </div>
-
-      <div style={{display:"flex", gap:12, justifyContent:"flex-end"}}>
-        <button onClick={onClose} style={{padding:"12px 24px", border:"none", background:"#ddd", borderRadius:10}}>Cancel</button>
-        <button onClick={()=>onSave(data)} style={{padding:"12px 32px", border:"none", background:C.orange, color:"#fff", borderRadius:10, fontWeight:700}} disabled={!data.name?.trim()}>💾 Save Changes</button>
-      </div>
-    </Modal>
-  );
+function voicePlaceholder() {
+  const area = document.getElementById('mental-sim-area');
+  if (!area) return;
+  area.focus();
+  area.placeholder = '🎤 Voice simulation mode — speak your size-up aloud while typing key points...';
+  area.style.borderColor = 'var(--fire-orange)';
 }
 
-// ─── PERSON DETAIL ────────────────────────────────────────────────────────────
-function PersonDetail({person, onClose, onEdit}) {
-  const [tab, setTab] = useState("assess");
-  const combo = getCombo(person.scores);
+function finishScenario(choiceIdx) {
+  clearInterval(modalTimerInterval);
+  const action = activeScenario.actions[choiceIdx];
+  if (!action) return;
 
-  return (
-    <Modal title={person.name} onClose={onClose}>
-      <div style={{display:"flex", justifyContent:"space-between", marginBottom:20}}>
-        <div>
-          <div style={{fontSize:52}}>{combo.icon}</div>
-          <div style={{fontSize:24, fontWeight:800, color:combo.color}}>{combo.label}</div>
-        </div>
-        <button onClick={()=>{ onEdit(person); onClose(); }} style={{background:C.orange, color:"#fff", border:"none", padding:"10px 22px", borderRadius:10, fontWeight:700}}>✏ Edit</button>
-      </div>
+  // Calculate cue score
+  const correctCues = activeScenario.cues.filter(c => c.correct);
+  const correctSelected = correctCues.filter((c, i) => {
+    const globalIdx = activeScenario.cues.indexOf(c);
+    return selectedCues.has(globalIdx);
+  }).length;
+  const incorrectSelected = [...selectedCues].filter(i => !activeScenario.cues[i].correct).length;
+  const rawCueScore = correctCues.length > 0
+    ? Math.max(0, Math.round((correctSelected / correctCues.length) * 100 - incorrectSelected * 10))
+    : 80;
+  const cueScore = action.cueScore || rawCueScore;
+  const simScore = action.simScore || Math.round((action.score + cueScore) / 2);
 
-      <div style={{marginBottom:24}}>
-        <div style={{display:"flex", justifyContent:"space-between", fontSize:14, marginBottom:8}}>
-          <span>Character Progress</span>
-          <span>{combo.progress}%</span>
-        </div>
-        <div className="progress-bar">
-          <div className="progress-fill" style={{width: `${combo.progress}%`, background: combo.progress > 80 ? "linear-gradient(90deg,#00b36b,#34d399)" : combo.progress > 50 ? "linear-gradient(90deg,#ff8c00,#ffaa00)" : "#dc3545"}} />
-        </div>
-        <div style={{fontSize:13, color:C.textMuted, marginTop:6}}>
-          Last updated: {person.lastUpdated ? new Date(person.lastUpdated).toLocaleDateString() : "Never"}
-        </div>
-      </div>
+  // Pattern bonus
+  const patternBonus = (selectedPattern === activeScenario.correctPattern) ? 5 : -5;
+  const finalScore = Math.min(100, Math.max(0, action.score + patternBonus));
 
-      <div style={{display:"flex", borderBottom:"3px solid #ff8c00", marginBottom:20}}>
-        {["assess","develop","notes"].map(t => (
-          <button key={t} onClick={()=>setTab(t)} style={{flex:1, padding:"14px", fontWeight:700, background:tab===t?C.orange:"#f1f3f5", color:tab===t?"#fff":"#333", border:"none"}}>
-            {t==="assess"?"📊 Profile":t==="develop"?"🛠 Develop":"📝 Notes"}
-          </button>
-        ))}
-      </div>
+  const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
 
-      {tab==="assess" && Object.entries(person.scores).map(([k,v]) => {
-        const t = VIRTUES[k];
-        const showHas = v >= 2;
-        return (
-          <div key={k} style={{marginBottom:20, background:"#fff", border:`2px solid ${t.border}`, borderRadius:14, overflow:"hidden"}}>
-            <div style={{background:t.bg, padding:"16px 20px", display:"flex", alignItems:"center", gap:16}}>
-              <span style={{fontSize:42}}>{t.icon}</span>
-              <div style={{flex:1}}><div style={{fontSize:21, fontWeight:800, color:t.color}}>{t.label}</div></div>
-              <span style={{fontSize:18, fontWeight:700}}>{v}/3</span>
-            </div>
-            <div style={{padding:"20px"}}>
-              {(showHas ? t.strong : t.weak).map((s,i) => (
-                <div key={i} style={{marginBottom:6}}>{showHas?"→":"–"} {s}</div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
+  // Update state
+  state.sessions = (state.sessions || 0) + 1;
+  const allScores = state.history.map(h => h.score);
+  allScores.push(finalScore);
+  state.avgScore = Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length);
+  state.avgCueScore = Math.round(((state.avgCueScore || 0) * (state.sessions - 1) + cueScore) / state.sessions);
 
-      {tab==="develop" && (
-        <div>
-          {Object.entries(person.scores).map(([k,v]) => {
-            const t = VIRTUES[k];
-            return (
-              <div key={k} style={{marginBottom:20, background:"#fff", border:`2px solid ${t.border}`, borderRadius:14, overflow:"hidden"}}>
-                <div style={{background:t.bg, padding:"14px 20px", display:"flex", alignItems:"center", gap:12}}>
-                  <span style={{fontSize:28}}>{t.icon}</span>
-                  <div style={{fontSize:18, fontWeight:800, color:t.color, flex:1}}>{t.label}</div>
-                  <span style={{fontSize:14, color:C.textMuted, background:"#fff", padding:"4px 10px", borderRadius:20, fontWeight:700}}>{SCORE_LABELS[v]}</span>
-                </div>
-                <div style={{padding:"16px 20px"}}>
-                  {t.develop.map((step,i) => (
-                    <div key={i} style={{display:"flex", gap:12, marginBottom:10, alignItems:"flex-start"}}>
-                      <span style={{background:C.orange, color:"#fff", borderRadius:"50%", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:800, flexShrink:0}}>{i+1}</span>
-                      <span style={{fontSize:14, color:C.text, lineHeight:1.5}}>{step}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+  const prev = state.topScoresByScenario[activeScenario.id] || 0;
+  state.topScoresByScenario[activeScenario.id] = Math.max(prev, finalScore);
 
-      {tab==="notes" && (
-        <div style={{background:"#fff", border:`1px solid ${C.border}`, borderRadius:12, padding:24, minHeight:200, whiteSpace:"pre-wrap", fontSize:15}}>
-          {person.notes || "No notes added yet."}
-        </div>
-      )}
-    </Modal>
-  );
-}
+  if (finalScore >= 100) state.perfectScores = (state.perfectScores || 0) + 1;
+  if (!state.fastestSession || elapsed < state.fastestSession) state.fastestSession = elapsed;
 
-const BLANK_ATHLETE = { id:"", name:"", role:"", notes:"", scores:{L:1,P:1,S:1,G:1,H:1,Gr:1,J:1}, lastUpdated: null };
-
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
-function App() {
-  const [tab, setTab] = useState("athletes");
-  const [athletes, setAthletes] = useState(() => load("awaygame_athletes_v1", []));
-  const [editing, setEditing] = useState(null);
-  const [viewing, setViewing] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-
-  function saveAthlete(p) {
-    const updated = {...p, id: p.id || uid(), lastUpdated: Date.now()};
-    const next = p.id ? athletes.map(x => x.id === p.id ? updated : x) : [...athletes, updated];
-    setAthletes(next);
-    save("awaygame_athletes_v1", next);
-    setEditing(null);
+  if (!state.completedCategories.includes(activeScenario.category)) {
+    state.completedCategories.push(activeScenario.category);
+    state.categoriesCompleted = state.completedCategories.length;
   }
 
-  function deleteAthlete(id) {
-    const next = athletes.filter(a => a.id !== id);
-    setAthletes(next);
-    save("awaygame_athletes_v1", next);
-    setDeleteConfirm(null);
-    if (viewing && viewing.id === id) setViewing(null);
-  }
+  updateStreak();
 
-  const teamStats = calculateTeamProgress(athletes);
+  const entry = {
+    title: activeScenario.title,
+    icon: activeScenario.icon,
+    category: activeScenario.categoryLabel,
+    date: new Date().toLocaleDateString(),
+    score: finalScore,
+    cueScore,
+    simScore,
+    elapsed,
+    feedback: action.feedback
+  };
+  state.history.unshift(entry);
+  if (state.history.length > 50) state.history.pop();
+  saveState();
 
-  return (
-    <div style={{minHeight:"100vh", background:"#f8f9fa"}}>
-      {/* HEADER */}
-      <div style={{background:"#fff", borderBottom:"4px solid #ff8c00", padding:"0 24px", height:76, display:"flex", alignItems:"center", justifyContent:"space-between", boxShadow:"0 3px 12px rgba(0,0,0,0.1)"}}>
-        <div>
-          <div style={{fontFamily:"'Barlow Condensed',sans-serif", fontWeight:900, fontSize:32, letterSpacing:1.5, color:C.orange}}>AWAY GAME</div>
-          <div style={{fontSize:13, color:"#555"}}>Christian Parent’s Playbook</div>
-        </div>
-        <div style={{display:"flex", gap:8}}>
-          <button onClick={()=>setTab("athletes")} style={{padding:"10px 22px", borderRadius:10, background:tab==="athletes"?C.orange:"#fff", color:tab==="athletes"?"#fff":"#333", fontWeight:700, border:"2px solid #ff8c00"}}>👥 My Athletes</button>
-          <button onClick={()=>setTab("playbook")} style={{padding:"10px 22px", borderRadius:10, background:tab==="playbook"?C.orange:"#fff", color:tab==="playbook"?"#fff":"#333", fontWeight:700, border:"2px solid #ff8c00"}}>📖 The Playbook</button>
-        </div>
-      </div>
-
-      {tab === "athletes" && (
-        <div style={{padding:24}}>
-          {/* TEAM PROGRESS DASHBOARD */}
-          {athletes.length > 0 && (
-            <div className="team-card" style={{marginBottom:32}}>
-              <div style={{fontSize:20, fontWeight:800, marginBottom:16, color:C.orange}}>Team Progress Overview</div>
-              <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:20}}>
-                <div>
-                  <div style={{fontSize:13, color:C.textMuted}}>Team Average Score</div>
-                  <div style={{fontSize:32, fontWeight:800, color:C.orange}}>{teamStats.avgScore}</div>
-                  <div style={{fontSize:13}}>out of 3.0</div>
-                </div>
-                <div>
-                  <div style={{fontSize:13, color:C.textMuted}}>Strong Virtues</div>
-                  <div style={{fontSize:32, fontWeight:800, color: teamStats.strongPercent > 70 ? C.green : C.orange}}>{teamStats.strongPercent}%</div>
-                </div>
-                <div>
-                  <div style={{fontSize:13, color:C.textMuted}}>Athletes Tracked</div>
-                  <div style={{fontSize:32, fontWeight:800}}>{teamStats.totalAthletes}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:28}}>
-            <h1 style={{fontSize:28, fontWeight:800}}>My Athletes</h1>
-            <button onClick={()=>setEditing(BLANK_ATHLETE)} style={{background:C.orange, color:"#fff", border:"none", padding:"12px 28px", borderRadius:12, fontWeight:700}}>＋ Add Athlete</button>
-          </div>
-
-          {athletes.length === 0 ? (
-            <div style={{textAlign:"center", padding:"120px 20px", color:"#666"}}>
-              <div style={{fontSize:80}}>⚽️🏀🏈</div>
-              <div style={{fontSize:24, margin:"20px 0"}}>Start building your team’s character</div>
-              <button onClick={()=>setEditing(BLANK_ATHLETE)} style={{background:C.orange, color:"#fff", padding:"14px 36px", borderRadius:12, fontSize:17, fontWeight:700}}>Add Your First Athlete</button>
-            </div>
-          ) : (
-            <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(310px, 1fr))", gap:20}}>
-              {athletes.map(p => {
-                const combo = getCombo(p.scores);
-                return (
-                  <div key={p.id} style={{background:"#fff", border:`1px solid ${C.border}`, borderRadius:16, padding:22, boxShadow:"0 6px 20px rgba(0,0,0,0.07)", position:"relative"}}>
-                    <button 
-                      onClick={(e)=>{e.stopPropagation(); setDeleteConfirm(p);}} 
-                      className="delete-btn" 
-                      style={{position:"absolute", top:12, right:12}}
-                    >
-                      🗑
-                    </button>
-                    
-                    <div onClick={()=>setViewing(p)} style={{cursor:"pointer"}}>
-                      <div style={{fontSize:22, fontWeight:800, marginBottom:8}}>{p.name}</div>
-                      {p.role && <div style={{color:C.textSub, marginBottom:12}}>{p.role}</div>}
-                      
-                      <div style={{display:"flex", gap:8, flexWrap:"wrap", marginBottom:16}}>
-                        {Object.entries(p.scores).map(([k,v]) => (
-                          <div key={k} style={{background:VIRTUES[k].bg, padding:"6px 10px", borderRadius:8, fontSize:14}}>{VIRTUES[k].icon} {v}</div>
-                        ))}
-                      </div>
-
-                      <div style={{marginBottom:12}}>
-                        <div className="progress-bar">
-                          <div className="progress-fill" style={{width: `${combo.progress}%`, background: combo.progress > 80 ? "linear-gradient(90deg,#00b36b,#34d399)" : combo.progress > 50 ? "linear-gradient(90deg,#ff8c00,#ffaa00)" : "#dc3545"}} />
-                        </div>
-                      </div>
-
-                      <div style={{fontSize:13, color:C.textMuted}}>Last updated: {p.lastUpdated ? new Date(p.lastUpdated).toLocaleDateString() : "Never"}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {tab === "playbook" && (
-        <div style={{padding:24, maxWidth:820, margin:"0 auto"}}>
-          <h2 style={{color:C.orange, marginBottom:8}}>The Seven Virtues</h2>
-          <p style={{color:C.textSub, marginBottom:32}}>Fruit of the Spirit applied to youth sports.</p>
-          {Object.values(VIRTUES).map(t => (
-            <div key={t.key} style={{marginBottom:24, background:"#fff", border:`1px solid ${t.border}`, borderRadius:16, padding:24}}>
-              <div style={{display:"flex", alignItems:"center", gap:16}}>
-                <span style={{fontSize:48}}>{t.icon}</span>
-                <div>
-                  <div style={{fontSize:22, fontWeight:800, color:t.color}}>{t.label}</div>
-                  <div style={{color:C.textSub}}>"{t.tagline}"</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {editing && <EditModal person={editing} onSave={saveAthlete} onClose={()=>setEditing(null)} />}
-      {viewing && <PersonDetail person={viewing} onClose={()=>setViewing(null)} onEdit={p=>{setViewing(null); setEditing(p);}} />}
-      {deleteConfirm && <ConfirmDelete name={deleteConfirm.name} onConfirm={()=>deleteAthlete(deleteConfirm.id)} onCancel={()=>setDeleteConfirm(null)} />}
+  // Render results
+  activeStep = 6;
+  updateStepBar();
+  const grade = finalScore >= 90 ? '⭐ OUTSTANDING' : finalScore >= 75 ? '✅ SOLID CALL' : finalScore >= 55 ? '⚠️ NEEDS WORK' : '❌ CRITICAL ERROR';
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <div class="score-reveal">
+      <div class="score-number ${scoreClass(finalScore)}">${finalScore}</div>
+      <div class="score-grade">${grade}</div>
     </div>
-  );
+    <div class="rpd-breakdown">
+      <div class="rpd-metric">
+        <div class="mval ${scoreClass(cueScore)}">${cueScore}%</div>
+        <div class="mlbl">CUE ACCURACY</div>
+      </div>
+      <div class="rpd-metric">
+        <div class="mval ${scoreClass(simScore)}">${simScore}%</div>
+        <div class="mlbl">SIM FIDELITY</div>
+      </div>
+      <div class="rpd-metric">
+        <div class="mval text-blue">${elapsed}s</div>
+        <div class="mlbl">DECISION TIME</div>
+      </div>
+    </div>
+    <div class="mentor-box">
+      <div class="mentor-tag">⭐ BATTALION CHIEF FEEDBACK</div>
+      ${action.feedback}
+    </div>
+    <div class="btn-row">
+      <button class="modal-btn modal-btn-secondary" onclick="closeModal(); showPage('dashboard');">DASHBOARD</button>
+      <button class="modal-btn modal-btn-primary" onclick="closeModal(); openModal(${activeScenario.id});">RETRY SCENARIO</button>
+    </div>`;
+
+  if (finalScore >= 90) triggerConfetti();
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(React.createElement(App));
+function updateStreak() {
+  const today = new Date().toDateString();
+  if (state.lastTrainingDate !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    state.streak = (state.lastTrainingDate === yesterday) ? (state.streak || 0) + 1 : 1;
+    state.lastTrainingDate = today;
+  }
+  document.getElementById('nav-streak').textContent = state.streak;
+}
+
+/* ================================================================
+   QUICK DRILL
+================================================================ */
+let drillTimerInterval = null;
+let drillSecsLeft = 60;
+let drillQ = null;
+let drillAnswered = false;
+let drillScore = 0;
+let drillCount = 0;
+
+function openQuickDrill() {
+  drillSecsLeft = 60;
+  drillScore = 0;
+  drillCount = 0;
+  document.getElementById('drill-overlay').classList.add('open');
+  loadNextDrillQuestion();
+  clearInterval(drillTimerInterval);
+  drillTimerInterval = setInterval(() => {
+    drillSecsLeft--;
+    document.getElementById('drill-timer').textContent = drillSecsLeft;
+    if (drillSecsLeft <= 10) document.getElementById('drill-timer').style.color = 'var(--danger)';
+    if (drillSecsLeft <= 0) endDrill();
+  }, 1000);
+}
+
+function loadNextDrillQuestion() {
+  drillAnswered = false;
+  drillQ = DRILL_QUESTIONS[Math.floor(Math.random() * DRILL_QUESTIONS.length)];
+  document.getElementById('drill-question').textContent = drillQ.q;
+  document.getElementById('drill-answers').innerHTML = drillQ.answers.map((a, i) => `
+    <button class="drill-answer" onclick="answerDrill(${i}, this)">${a}</button>`).join('');
+}
+
+function answerDrill(idx, btn) {
+  if (drillAnswered) return;
+  drillAnswered = true;
+  drillCount++;
+  if (idx === drillQ.correct) {
+    btn.classList.add('correct');
+    drillScore++;
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.drill-answer')[drillQ.correct].classList.add('correct');
+  }
+  setTimeout(loadNextDrillQuestion, 1200);
+}
+
+function endDrill() {
+  clearInterval(drillTimerInterval);
+  document.getElementById('drill-overlay').classList.remove('open');
+  const pct = drillCount > 0 ? Math.round((drillScore / drillCount) * 100) : 0;
+  const entry = { title: '60-Sec RPD Drill', icon: '⚡', category: 'DRILL', date: new Date().toLocaleDateString(), score: pct, cueScore: pct, simScore: pct, elapsed: 60, feedback: `Drill result: ${drillScore}/${drillCount} correct.` };
+  state.sessions = (state.sessions || 0) + 1;
+  state.history.unshift(entry);
+  updateStreak();
+  saveState();
+  renderDashboard();
+  if (pct >= 90) triggerConfetti();
+  alert(`⚡ DRILL COMPLETE!\n\n${drillScore} / ${drillCount} correct (${pct}%)\n\nRPD pattern memory is built through repetition. Run this daily.`);
+}
+
+function closeDrill() {
+  clearInterval(drillTimerInterval);
+  document.getElementById('drill-overlay').classList.remove('open');
+  document.getElementById('drill-timer').style.color = 'var(--fire-amber)';
+}
+
+/* ================================================================
+   HISTORY
+================================================================ */
+function renderHistory() {
+  if (state.history.length) {
+    const scores = state.history.map(h => h.score);
+    const cueScores = state.history.filter(h => h.cueScore).map(h => h.cueScore);
+    const totalSecs = state.history.reduce((a, h) => a + (h.elapsed || 0), 0);
+    document.getElementById('h-cue-acc').textContent = cueScores.length ? Math.round(cueScores.reduce((a,b)=>a+b,0)/cueScores.length) + '%' : '—';
+    document.getElementById('h-sim-fid').textContent = state.sessions ? Math.round(state.avgScore) + '%' : '—';
+    document.getElementById('h-dec-spd').textContent = state.fastestSession ? state.fastestSession + 's' : '—';
+    document.getElementById('h-total-time').textContent = Math.round(totalSecs / 3600 * 10) / 10 + 'h';
+  }
+
+  const list = document.getElementById('history-list');
+  if (!state.history.length) {
+    list.innerHTML = '<div style="color:var(--ash); padding:20px 0;">No sessions yet. Start training!</div>';
+    return;
+  }
+  list.innerHTML = state.history.map(h => {
+    const sc = scoreClass(h.score);
+    const ringCls = h.score >= 90 ? 'ring-excellent' : h.score >= 75 ? 'ring-good' : h.score >= 55 ? 'ring-fair' : 'ring-poor';
+    return `<div class="history-row">
+      <div class="history-score-ring ${ringCls}">${h.score}</div>
+      <div class="history-info">
+        <div class="history-title">${h.icon || '🔥'} ${h.title}</div>
+        <div class="history-meta">${h.date} • ${h.category || ''} • ${h.elapsed ? h.elapsed + 's' : ''}</div>
+        <div class="history-meta" style="margin-top:4px; font-size:11px; color:var(--chalk);">${(h.feedback || '').substring(0,80)}${h.feedback && h.feedback.length > 80 ? '...' : ''}</div>
+      </div>
+      <div class="history-badges">
+        ${h.cueScore ? `<span class="mini-badge">CUE ${h.cueScore}%</span>` : ''}
+        ${h.simScore ? `<span class="mini-badge">SIM ${h.simScore}%</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ================================================================
+   LIBRARY
+================================================================ */
+function renderLibrary() {
+  const container = document.getElementById('library-content');
+  container.innerHTML = LIBRARY_SECTIONS.map((s, i) => `
+    <div class="library-card">
+      <div class="library-header" onclick="toggleLibrary(${i})">
+        <div class="library-icon" style="background:${s.iconBg}">${s.icon}</div>
+        <div class="library-title">${s.title}</div>
+        <div class="library-toggle" id="lib-toggle-${i}"><i class="fas fa-chevron-down"></i></div>
+      </div>
+      <div class="library-body" id="lib-body-${i}">${s.content}</div>
+    </div>`).join('');
+}
+
+function toggleLibrary(i) {
+  const body = document.getElementById('lib-body-' + i);
+  const toggle = document.getElementById('lib-toggle-' + i);
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  toggle.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+/* ================================================================
+   BADGES
+================================================================ */
+function renderBadges() {
+  const grid = document.getElementById('badge-grid');
+  grid.innerHTML = BADGES_DEF.map(b => {
+    const earned = b.condition(state);
+    return `<div class="badge-item ${earned ? 'earned' : 'locked'}">
+      <div class="badge-icon">${b.icon}</div>
+      <div class="badge-name">${b.name}</div>
+      <div class="badge-desc">${b.desc}</div>
+      ${earned ? '<div style="font-size:10px; color:var(--green-go); margin-top:6px; font-family:var(--font-mono);">✓ EARNED</div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+/* ================================================================
+   INCIDENT LOGGER
+================================================================ */
+function saveIncident() {
+  const incident = {
+    id: Date.now(),
+    date: document.getElementById('log-date').value,
+    type: document.getElementById('log-type').value,
+    dispatch: document.getElementById('log-dispatch').value,
+    cues: document.getElementById('log-cues').value,
+    pattern: document.getElementById('log-pattern').value,
+    action: document.getElementById('log-action').value,
+    outcome: document.getElementById('log-outcome').value
+  };
+  if (!incident.dispatch && !incident.cues) { alert('Fill in at least the dispatch and cues.'); return; }
+  state.incidents = state.incidents || [];
+  state.incidents.unshift(incident);
+  state.loggedIncidents = (state.loggedIncidents || 0) + 1;
+  saveState();
+  clearLoggerForm();
+  renderLoggedIncidents();
+  alert('✅ Incident logged. This is how you build your RPD library — one real call at a time.');
+}
+
+function clearLoggerForm() {
+  ['log-date','log-dispatch','log-cues','log-pattern','log-action','log-outcome'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+}
+
+function convertToScenario() {
+  const dispatch = document.getElementById('log-dispatch').value;
+  const cues = document.getElementById('log-cues').value;
+  if (!dispatch) { alert('Add a dispatch description first.'); return; }
+  alert(`✅ SCENARIO TEMPLATE CREATED\n\nYour incident "${dispatch.substring(0,40)}..." has been saved as a custom training note.\n\nIn a future version, this will auto-generate a full playable scenario from your real call data. For now, save this incident and use it as the basis for a crew TDG discussion.\n\nThis is what Battalion Chiefs do — turn every call into a lesson.`);
+  saveIncident();
+}
+
+function renderLoggedIncidents() {
+  const container = document.getElementById('logged-incidents');
+  if (!state.incidents || !state.incidents.length) {
+    container.innerHTML = '<div style="color:var(--ash); font-size:13px; padding:10px 0;">No incidents logged yet. Start documenting your calls.</div>';
+    return;
+  }
+  container.innerHTML = `<div style="font-family:var(--font-display); font-size:15px; font-weight:600; letter-spacing:1px; margin-bottom:12px; color:var(--ash);">YOUR INCIDENT LOG (${state.incidents.length})</div>` +
+    state.incidents.map(inc => `
+    <div class="card card-sm" style="margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div>
+          <span style="font-size:12px; font-weight:600;">${inc.type}</span>
+          <span style="font-size:11px; color:var(--ash); margin-left:8px;">${inc.date}</span>
+        </div>
+        <button onclick="deleteIncident(${inc.id})" style="background:none; border:none; color:var(--ash); cursor:pointer; font-size:12px;">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      <div style="font-size:13px; color:var(--chalk); margin-bottom:6px;">${(inc.dispatch || '').substring(0,120)}${inc.dispatch && inc.dispatch.length > 120 ? '...' : ''}</div>
+      <div style="font-size:11px; color:var(--ash);">Pattern: ${inc.pattern || 'Not recorded'}</div>
+    </div>`).join('');
+}
+
+function deleteIncident(id) {
+  if (!confirm('Delete this incident?')) return;
+  state.incidents = (state.incidents || []).filter(i => i.id !== id);
+  state.loggedIncidents = state.incidents.length;
+  saveState();
+  renderLoggedIncidents();
+}
+
+/* ================================================================
+   CREW MODE
+================================================================ */
+function generateCode() {
+  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+  document.getElementById('session-code').textContent = code;
+}
+
+function startCrewSession() {
+  const namesRaw = document.getElementById('crew-names').value;
+  if (!namesRaw.trim()) { alert('Enter at least one crew member name.'); return; }
+  const names = namesRaw.split(',').map(n => n.trim()).filter(n => n);
+  const randomScenario = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
+  state.crewSessions = (state.crewSessions || 0) + 1;
+  saveState();
+
+  const scores = names.map(n => ({ name: n, score: Math.floor(60 + Math.random() * 40) }));
+  scores.sort((a, b) => b.score - a.score);
+  state.crewLeaderboard = scores;
+  saveState();
+  renderCrewLeaderboard();
+
+  alert(`🔥 HOT SEAT DRILL LAUNCHED\n\nScenario: ${randomScenario.title}\n\nCrew Members: ${names.join(', ')}\n\nEach member takes the hot seat one at a time. Present the scenario verbally. They call their action. Score them and record results.\n\nLeaderboard has been updated with placeholder scores for demonstration. In a production version, each crew member scores their own session.`);
+}
+
+function renderCrewLeaderboard() {
+  const lb = document.getElementById('crew-leaderboard');
+  if (!state.crewLeaderboard || !state.crewLeaderboard.length) {
+    lb.innerHTML = '<div style="color:var(--ash); font-size:13px;">No crew session started yet.</div>';
+    return;
+  }
+  lb.innerHTML = state.crewLeaderboard.map((m, i) => `
+    <div style="display:flex; align-items:center; gap:12px; padding:12px; background:var(--smoke-700); border-radius:8px; margin-bottom:8px;">
+      <div style="font-family:var(--font-display); font-size:20px; font-weight:700; color:${i===0?'var(--gold)':'var(--ash)'}; width:24px;">${i+1}</div>
+      <div style="flex:1; font-size:14px;">${m.name}</div>
+      <div class="activity-score ${scoreClass(m.score)}">${m.score}%</div>
+    </div>`).join('');
+}
+
+/* ================================================================
+   EXPORT REPORT
+================================================================ */
+function exportReport() {
+  if (!state.sessions) { alert('No sessions yet to export.'); return; }
+  const rank = getRank(state.avgScore || 0);
+  const reportLines = [
+    'COMMAND INSTINCT — RPD TRAINING REPORT',
+    '========================================',
+    `Generated: ${new Date().toLocaleDateString()}`,
+    '',
+    `RANK: ${rank.name}`,
+    `Total Sessions: ${state.sessions}`,
+    `Average Score: ${Math.round(state.avgScore || 0)}%`,
+    `Current Streak: ${state.streak} days`,
+    `Avg Cue Accuracy: ${Math.round(state.avgCueScore || 0)}%`,
+    `Fastest Decision: ${state.fastestSession || 'N/A'}s`,
+    `Incidents Logged: ${state.loggedIncidents || 0}`,
+    `Crew Sessions Led: ${state.crewSessions || 0}`,
+    '',
+    'SESSION LOG:',
+    '--------------------',
+    ...state.history.map(h => `${h.date} | ${h.title} | Score: ${h.score}% | Cue: ${h.cueScore||'—'}% | ${h.elapsed||'—'}s`)
+  ];
+  const csv = reportLines.join('\n');
+  const blob = new Blob([csv], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'CommandInstinct_RPD_Report.txt';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  alert('✅ Report exported!\n\nAttach to your promotion packet to prove initiative, self-directed learning, and leadership investment.\n\nThis is how you stand out from the field.');
+}
+
+/* ================================================================
+   CONFETTI
+================================================================ */
+function triggerConfetti() {
+  const colors = ['#C0392B','#E67E22','#F39C12','#F1C40F','#27AE60','#2980B9','#8E44AD'];
+  for (let i = 0; i < 60; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      width: ${6 + Math.random() * 8}px;
+      height: ${6 + Math.random() * 8}px;
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      animation-duration: ${2 + Math.random() * 3}s;
+      animation-delay: ${Math.random() * 0.8}s;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+  }
+}
+
+/* ================================================================
+   FIRE CANVAS PARTICLES
+================================================================ */
+function initFireCanvas() {
+  const canvas = document.getElementById('fire-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const PARTICLE_COUNT = 40;
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = canvas.height + 10;
+      this.vx = (Math.random() - 0.5) * 0.6;
+      this.vy = -(0.5 + Math.random() * 1.5);
+      this.life = 1;
+      this.decay = 0.003 + Math.random() * 0.005;
+      this.size = 2 + Math.random() * 4;
+      this.hue = 10 + Math.random() * 30;
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.life -= this.decay;
+      this.size *= 0.998;
+      if (this.life <= 0) this.reset();
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${this.hue}, 80%, 55%, ${this.life * 0.6})`;
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const p = new Particle();
+    p.y = Math.random() * canvas.height;
+    particles.push(p);
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  });
+}
+
+/* ================================================================
+   SCENARIO IMPORT / EXPORT SYSTEM
+   ─────────────────────────────────
+   HOW TO ADD SCENARIOS:
+   1. Add a new object to the SCENARIOS array at the top of this script.
+   2. Each scenario must have a unique `id` number (increment from 12).
+   3. Follow the exact same structure as existing scenarios.
+
+   HOW TO EXPORT ALL SCENARIOS (for the AI Generator):
+   Call exportScenariosJSON() from the browser console.
+
+   HOW TO IMPORT NEW SCENARIOS (from the AI Generator):
+   Call importScenariosFromJSON(jsonString) from the browser console,
+   or use the import dialog below.
+
+   AI GENERATOR INTEGRATION:
+   The companion scenario generator app sends a JSON array of scenario
+   objects using this exact schema. Paste the JSON into the import box,
+   or use window.CI_IMPORT() which is globally exposed.
+================================================================ */
+
+// Export all current scenarios as JSON (for AI generator or backup)
+function exportScenariosJSON() {
+  const json = JSON.stringify(SCENARIOS, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'CommandInstinct_Scenarios.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  alert('✅ Scenarios exported as JSON.\n\nPaste this file into your AI Scenario Generator to use as context, then import new scenarios back.');
+}
+
+// Import new scenarios from JSON string (validates structure first)
+function importScenariosFromJSON(jsonString) {
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonString);
+    if (!Array.isArray(parsed)) parsed = [parsed];
+  } catch (e) {
+    alert('❌ Invalid JSON. Check your format and try again.');
+    return false;
+  }
+
+  const required = ['id','title','category','categoryLabel','difficulty','icon','dispatch','arrival','cues','patternOptions','correctPattern','mentalSimHint','expectancyViolation','actions'];
+  const invalid = parsed.filter(sc => required.some(k => !(k in sc)));
+  if (invalid.length) {
+    alert(`❌ ${invalid.length} scenario(s) missing required fields. Required: ${required.join(', ')}`);
+    return false;
+  }
+
+  // Avoid ID collisions
+  const existingIds = new Set(SCENARIOS.map(s => s.id));
+  let added = 0;
+  for (const sc of parsed) {
+    if (existingIds.has(sc.id)) {
+      // Remap to a new ID
+      sc.id = Math.max(...SCENARIOS.map(s => s.id)) + 1;
+    }
+    SCENARIOS.push(sc);
+    existingIds.add(sc.id);
+    added++;
+  }
+
+  alert(`✅ ${added} scenario(s) imported successfully!\n\nThey now appear in the Scenarios tab. Go train.`);
+  return true;
+}
+
+// Open the import dialog
+function openImportDialog() {
+  const modal = document.createElement('div');
+  modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;`;
+  modal.innerHTML = `
+    <div style="background:#18191D;border:1px solid #3A3E47;border-radius:16px;padding:24px;width:100%;max-width:600px;max-height:80vh;overflow-y:auto;">
+      <div style="font-family:'Oswald',sans-serif;font-size:18px;font-weight:700;letter-spacing:1px;margin-bottom:8px;color:#F0F2F5;">IMPORT SCENARIOS</div>
+      <div style="font-size:12px;color:#6C7080;margin-bottom:16px;font-family:'Roboto Mono',monospace;letter-spacing:1px;">PASTE JSON FROM AI GENERATOR OR MANUAL CREATION</div>
+      <textarea id="import-json-area" style="width:100%;min-height:200px;background:#222429;border:1px solid #3A3E47;border-radius:8px;padding:12px;color:#F0F2F5;font-family:'Roboto Mono',monospace;font-size:12px;resize:vertical;margin-bottom:12px;" placeholder='[{"id":13,"title":"My New Scenario",...}]'></textarea>
+      <div style="display:flex;gap:10px;">
+        <button onclick="const j=document.getElementById('import-json-area').value; if(importScenariosFromJSON(j)){this.closest('[style*=fixed]').remove();renderScenarios('all');}" style="flex:1;padding:12px;background:linear-gradient(90deg,#C0392B,#E67E22);border:none;border-radius:8px;color:white;font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;cursor:pointer;">
+          ✅ IMPORT
+        </button>
+        <button onclick="exportScenariosJSON()" style="flex:1;padding:12px;background:#222429;border:1px solid #3A3E47;border-radius:8px;color:#B0B5C0;font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;cursor:pointer;">
+          📤 EXPORT EXISTING
+        </button>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="padding:12px 20px;background:#222429;border:1px solid #3A3E47;border-radius:8px;color:#6C7080;font-family:'Oswald',sans-serif;font-size:14px;cursor:pointer;">
+          CANCEL
+        </button>
+      </div>
+      <div style="margin-top:16px;padding:12px;background:#0a1215;border-left:3px solid #F39C12;border-radius:0 8px 8px 0;font-size:12px;color:#B0B5C0;line-height:1.7;">
+        <strong style="color:#F39C12;">AI GENERATOR TIP:</strong><br>
+        Tell Claude: <em>"Generate a new Command Instinct scenario in JSON format using the same schema as the existing scenarios. Make it about [topic]."</em><br>
+        Paste the JSON here and hit Import.
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+// Globally expose import function for programmatic use from other apps
+window.CI_IMPORT = importScenariosFromJSON;
+window.CI_EXPORT = exportScenariosJSON;
+window.CI_SCENARIOS = SCENARIOS; // Allow other apps to read scenario list
+
+/* ================================================================
+   BACKUP & RESTORE  (additive — does not touch existing logic)
+   ─────────────────────────────────────────────────────────────
+   exportStateJSON()  — one-shot export using File System Access
+                        API (Chrome/Edge) or Blob fallback.
+   importStateJSON()  — open a JSON file, validate, apply state.
+   toggleAutoBackup() — enable/disable persistent auto-backup.
+   _autoBackupWrite() — internal; called by saveState() silently.
+================================================================ */
+
+let _autoBackupHandle = null;   // FileSystemFileHandle (in-memory only)
+let _autoBackupEnabled = false;
+
+/* ── helpers ── */
+function _stateBlob() {
+  return new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+}
+
+function _validateImport(obj) {
+  // Must be a plain object with at least one known state key
+  const knownKeys = ['sessions','history','streak','avgScore','topScoresByScenario'];
+  return obj && typeof obj === 'object' && !Array.isArray(obj) &&
+         knownKeys.some(k => k in obj);
+}
+
+/* ── 1. Export (one-shot) ── */
+async function exportStateJSON() {
+  const filename = `CommandInstinct_backup_${new Date().toISOString().slice(0,10)}.json`;
+  const blob = _stateBlob();
+
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'JSON Backup', accept: { 'application/json': ['.json'] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      alert('✅ Backup saved successfully.');
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return; // user cancelled
+      // Fall through to blob download if API fails unexpectedly
+    }
+  }
+  // Fallback: standard download
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  alert('✅ Backup downloaded.\n\nTip: Use Chrome or Edge for direct Save dialog support.');
+}
+
+/* ── 2. Auto-backup: toggle ── */
+async function toggleAutoBackup() {
+  if (_autoBackupEnabled) {
+    // Turn off
+    _autoBackupEnabled = false;
+    _autoBackupHandle = null;
+    _setAutoBackupBtnState(false);
+    alert('Auto-backup disabled.');
+    return;
+  }
+
+  if (!window.showSaveFilePicker) {
+    alert('⚠️ Auto-backup requires the File System Access API.\n\nSupported in Chrome and Edge only.\nSafari and Firefox do not support persistent file writing.\n\nUse the BACKUP button for manual exports.');
+    return;
+  }
+
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: 'CommandInstinct_autosave.json',
+      types: [{ description: 'JSON Backup', accept: { 'application/json': ['.json'] } }]
+    });
+    _autoBackupHandle = handle;
+    _autoBackupEnabled = true;
+    _setAutoBackupBtnState(true);
+    // Write immediately so the file is created now
+    await _autoBackupWrite();
+    alert('✅ Auto-backup enabled.\n\nYour progress will be saved to this file automatically whenever the app writes state.');
+  } catch (e) {
+    if (e.name !== 'AbortError') alert('Could not enable auto-backup: ' + e.message);
+  }
+}
+
+/* ── 2b. Internal write (called by saveState) ── */
+async function _autoBackupWrite() {
+  if (!_autoBackupEnabled || !_autoBackupHandle) return;
+  try {
+    const writable = await _autoBackupHandle.createWritable();
+    await writable.write(_stateBlob());
+    await writable.close();
+  } catch (e) {
+    // Silently fail — don't interrupt the user's session
+    console.warn('Auto-backup write failed:', e.message);
+  }
+}
+
+function _setAutoBackupBtnState(on) {
+  const btn = document.getElementById('auto-backup-btn');
+  if (!btn) return;
+  btn.style.background = on ? 'var(--green-go)' : 'var(--smoke-600)';
+  btn.title = on ? 'Auto-backup ON — click to disable' : 'Enable auto-backup (Chrome/Edge only)';
+  btn.innerHTML = on
+    ? '<i class="fas fa-sync fa-spin"></i> AUTO'
+    : '<i class="fas fa-sync"></i> AUTO';
+}
+
+/* ── 3. Import / Restore ── */
+function importStateJSON() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json,.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      if (!_validateImport(parsed)) {
+        alert('❌ Invalid backup file.\n\nThis does not appear to be a Command Instinct backup.\nNo changes were made.');
+        return;
+      }
+      if (!confirm(`Restore backup from ${file.name}?\n\nThis will replace your current progress with the backup data.\n\nSessions in backup: ${parsed.sessions || 0}\nLast streak: ${parsed.streak || 0} days\n\nYour current data will be overwritten.`)) return;
+
+      // Apply imported state
+      Object.assign(state, parsed);
+      saveState();
+      renderDashboard();
+      alert('✅ Backup restored successfully.\n\nAll your previous session data has been loaded.');
+    } catch (err) {
+      alert('❌ Failed to read file: ' + err.message);
+    }
+  };
+  input.click();
+}
+
+/* ================================================================
+   INIT
+================================================================ */
+window.addEventListener('load', () => {
+  initFireCanvas();
+  renderDashboard();
+  generateCode();
+  // Set today's date in logger
+  const logDate = document.getElementById('log-date');
+  if (logDate) logDate.value = new Date().toISOString().split('T')[0];
+  console.log('%c🔥 COMMAND INSTINCT ONLINE — Sharpen your edge. Earn that rank.', 'color:#F39C12; font-size:16px; font-weight:bold;');
+  console.log('%cDEVELOPER TOOLS:\n  window.CI_IMPORT(jsonString) — import new scenarios\n  window.CI_EXPORT() — export scenarios as JSON\n  window.CI_SCENARIOS — access scenario array', 'color:#2980B9; font-size:12px;');
+});
 </script>
+<!-- Backup disclaimer footer -->
+<div style="text-align:center; padding:12px 16px; font-size:11px; color:#6C7080; font-family:'Roboto Mono',monospace; line-height:1.8; border-top:1px solid #2C2F36; margin-top:8px;">
+  <strong style="color:#3A3E47;">BACKUP INFO:</strong>
+  Auto-backup uses the <strong>File System Access API</strong> — supported in <strong>Chrome</strong> and <strong>Edge</strong> only.
+  Safari and Firefox do not support persistent file writing.
+  Use the <strong>BACKUP</strong> button to manually export a JSON file periodically for safety.
+</div>
+
 </body>
 </html>
